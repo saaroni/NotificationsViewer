@@ -70,7 +70,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:theme="@style/Theme.NotifyGlance.Overlay"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:excludeFromRecents="true" />
         <!-- Notification Listener Service -->
         <service

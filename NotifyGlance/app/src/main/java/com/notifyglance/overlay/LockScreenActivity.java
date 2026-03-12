@@ -96,7 +96,19 @@ public class LockScreenActivity extends AppCompatActivity {
 
         loadAndShow();
     }
-
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent - restarting cycle");
+        if (advanceRunnable != null) {
+            handler.removeCallbacks(advanceRunnable);
+            advanceRunnable = null;
+        }
+        currentIndex = 0;
+        queue.clear();
+        loadAndShow();
+    }
+    
     private void loadAndShow() {
         executor.execute(() -> {
              // Auto-cleanup notifications older than 7 days
