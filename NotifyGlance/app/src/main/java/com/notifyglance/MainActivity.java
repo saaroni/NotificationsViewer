@@ -1,12 +1,12 @@
 package com.notifyglance;
 
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.notifyglance.settings.SettingsActivity;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     private TextView tvStatusNls;
     private TextView tvStatusOverlay;
@@ -77,22 +79,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openOverlaySettings() {
-        Intent directIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + getPackageName()));
+        Log.d(TAG, "Opening overlay permission settings");
+        Intent directIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                .setData(Uri.parse("package:" + getPackageName()));
 
-        if (directIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(directIntent);
+        if (tryOpenSettingsIntent(directIntent)) {
             return;
         }
 
         Intent appDetailsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.parse("package:" + getPackageName()));
 
-        if (appDetailsIntent.resolveActivity(getPackageManager()) != null) {
+        if (tryOpenSettingsIntent(appDetailsIntent)) {
             Toast.makeText(this,
                     "Overlay settings unavailable on this device. Opening app settings instead.",
                     Toast.LENGTH_LONG).show();
-            startActivity(appDetailsIntent);
             return;
         }
 
@@ -102,9 +103,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openNotificationAccessScreen() {
+        Log.d(TAG, "Opening notification access settings");
+        Intent detailIntent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS")
+                .putExtra("android.provider.extra.NOTIFICATION_LISTENER_COMPONENT_NAME",
+                        new ComponentName(this,
+                                com.notifyglance.service.GlanceNotificationListenerService.class)
+                                .flattenToString());
+
+        if (tryOpenSettingsIntent(detailIntent)) {
+            return;
+        }
+
         Intent listenerIntent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-        if (listenerIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(listenerIntent);
+        if (tryOpenSettingsIntent(listenerIntent)) {
             return;
         }
 
@@ -115,26 +126,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (notificationIntent != null
-                && notificationIntent.resolveActivity(getPackageManager()) != null) {
+                && tryOpenSettingsIntent(notificationIntent)) {
             Toast.makeText(this,
                     "Notification access screen unavailable. Opening app notifications.",
                     Toast.LENGTH_LONG).show();
-            startActivity(notificationIntent);
             return;
         }
 
         Intent appDetailsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.parse("package:" + getPackageName()));
-        if (appDetailsIntent.resolveActivity(getPackageManager()) != null) {
+        if (tryOpenSettingsIntent(appDetailsIntent)) {
             Toast.makeText(this,
                     "Notification settings unavailable. Opening app info instead.",
                     Toast.LENGTH_LONG).show();
-            startActivity(appDetailsIntent);
             return;
         }
 
         Toast.makeText(this,
                 "Unable to open settings on this device.",
                 Toast.LENGTH_LONG).show();
+    }
+
+    private boolean tryOpenSettingsIntent(Intent intent) {
+        String action = intent.getAction();
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            Log.d(TAG, "Settings intent not resolvable: " + action + ", data=" + intent.getData());
+            return false;
+        }
+
+        Log.d(TAG, "Launching settings intent: " + action + ", data=" + intent.getData());
+        startActivity(intent);
+        return true;
     }
 }
