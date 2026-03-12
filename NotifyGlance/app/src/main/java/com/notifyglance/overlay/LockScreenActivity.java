@@ -80,6 +80,7 @@ public class LockScreenActivity extends AppCompatActivity {
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
             | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         );
 
         setContentView(R.layout.activity_lock_screen);
