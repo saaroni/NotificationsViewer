@@ -1,5 +1,6 @@
 package com.notifyglance.overlay;
 
+import android.app.ActivityNotFoundException;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -109,7 +110,7 @@ public class OverlayService extends Service {
             case ACTION_TRIGGER:
             default:
                 if (isDeviceLocked()) {
-                    launchLockScreenActivity();
+                    launchLockScreenFlow();
                 } else {
                     loadQueueAndShow(false);
                 }
@@ -123,7 +124,33 @@ public class OverlayService extends Service {
         return km != null && km.isKeyguardLocked();
     }
 
-    private void launchLockScreenActivity() {
+    private void launchLockScreenFlow() {
+        Log.d(TAG, "Device locked - attempting lock-screen activity launch flow");
+        if (tryLaunchLockScreenActivity()) {
+            return;
+        }
+        Log.d(TAG, "Direct launch unavailable - using full-screen notification fallback");
+        postLockScreenFullScreenNotification();
+    }
+
+    private boolean tryLaunchLockScreenActivity() {
+        Intent lockIntent = new Intent(this, LockScreenActivity.class);
+        lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+
+        try {
+            startActivity(lockIntent);
+            Log.d(TAG, "Lock screen is active - launched LockScreenActivity directly");
+            return true;
+        } catch (ActivityNotFoundException | SecurityException e) {
+            Log.w(TAG, "Direct LockScreenActivity launch failed, falling back to full-screen notification", e);
+            return false;
+        }
+    }
+
+    private void postLockScreenFullScreenNotification() {
         Intent lockIntent = new Intent(this, LockScreenActivity.class);
         lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -152,6 +179,8 @@ public class OverlayService extends Service {
         if (nm != null) {
             nm.notify(LOCKSCREEN_NOTIF_ID, notification);
             Log.d(TAG, "Lock screen is active - posted full-screen notification intent");
+        } else {
+            Log.w(TAG, "NotificationManager unavailable; could not post full-screen lock-screen notification");
         }
     }
 
