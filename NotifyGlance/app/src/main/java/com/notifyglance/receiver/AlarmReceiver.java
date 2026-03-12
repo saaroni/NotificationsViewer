@@ -7,7 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.notifyglance.overlay.LockScreenActivity;
+import com.notifyglance.overlay.OverlayService;
 import com.notifyglance.util.AlarmScheduler;
 import com.notifyglance.util.Prefs;
 import com.notifyglance.util.WakeUtil;
@@ -41,19 +41,13 @@ public class AlarmReceiver extends BroadcastReceiver {
         WakeUtil.acquireTemporary(context);
         Log.d(TAG, "WakeLock acquired");
 
-        // Launch activity
-        Intent activityIntent = new Intent(context, LockScreenActivity.class);
-        activityIntent.addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK
-            | Intent.FLAG_ACTIVITY_CLEAR_TOP
-            | Intent.FLAG_ACTIVITY_SINGLE_TOP
-            | Intent.FLAG_ACTIVITY_NO_ANIMATION
-        );
+        // Launch overlay via foreground service.
+        // Starting an Activity directly from a background receiver is blocked on modern Android.
         try {
-            context.startActivity(activityIntent);
-            Log.d(TAG, "LockScreenActivity launched successfully");
+            OverlayService.triggerOverlay(context);
+            Log.d(TAG, "OverlayService trigger sent successfully");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to launch LockScreenActivity: " + e.getMessage());
+            Log.e(TAG, "Failed to trigger OverlayService: " + e.getMessage());
         }
 
         AlarmScheduler.schedule(context);

@@ -1,5 +1,6 @@
 package com.notifyglance.overlay;
 
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -105,10 +106,33 @@ public class OverlayService extends Service {
                 break;
             case ACTION_TRIGGER:
             default:
-                loadQueueAndShow(false);
+                if (isDeviceLocked()) {
+                    launchLockScreenActivity();
+                } else {
+                    loadQueueAndShow(false);
+                }
                 break;
         }
         return START_STICKY;
+    }
+
+    private boolean isDeviceLocked() {
+        KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        return km != null && km.isKeyguardLocked();
+    }
+
+    private void launchLockScreenActivity() {
+        Intent lockIntent = new Intent(this, LockScreenActivity.class);
+        lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        try {
+            startActivity(lockIntent);
+            Log.d(TAG, "Lock screen is active - launched LockScreenActivity");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to launch LockScreenActivity from service", e);
+        }
     }
 
     private void loadQueueAndShow(boolean isTest) {
