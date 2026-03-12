@@ -50,6 +50,12 @@ public class DiagnosticsActivity extends AppCompatActivity {
         loadStats();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadStats();
+    }
+
     private void loadStats() {
         Prefs prefs = new Prefs(this);
         tvServiceStatus.setText("Master On: " + prefs.isMasterOn()
