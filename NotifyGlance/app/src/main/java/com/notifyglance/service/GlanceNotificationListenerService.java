@@ -9,8 +9,7 @@ import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.Log;
 
-import android.content.Intent;
-import com.notifyglance.overlay.LockScreenActivity;
+import com.notifyglance.overlay.OverlayService;
 import com.notifyglance.util.WakeUtil;
 
 import com.notifyglance.db.AppDatabase;
@@ -97,12 +96,7 @@ public class GlanceNotificationListenerService extends NotificationListenerServi
             // Trigger overlay if master is on, trigger-on-new is enabled, and not quiet hours
             if (masterOn && prefs.isTriggerOnNew() && !prefs.isQuietNow()) {
                 WakeUtil.acquireTemporary(this);
-                Intent activityIntent = new Intent(this, LockScreenActivity.class);
-                activityIntent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_NO_ANIMATION
-                );
-                startActivity(activityIntent);
+                OverlayService.triggerOverlay(this);
             }
 
         } catch (Exception e) {
