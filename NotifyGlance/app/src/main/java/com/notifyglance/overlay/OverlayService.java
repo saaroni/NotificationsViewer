@@ -13,7 +13,6 @@ import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -41,7 +40,9 @@ public class OverlayService extends Service {
 
     private static final String TAG = "OverlayService";
     private static final String CHANNEL_ID = "overlay_service_channel";
+    private static final String LOCKSCREEN_CHANNEL_ID = "overlay_lockscreen_channel";
     private static final int FG_NOTIF_ID = 1001;
+    private static final int LOCKSCREEN_NOTIF_ID = 1002;
     public  static final String ACTION_TRIGGER = "com.notifyglance.TRIGGER_OVERLAY";
     public  static final String ACTION_STOP    = "com.notifyglance.STOP_OVERLAY";
     public  static final String ACTION_TEST    = "com.notifyglance.TEST_OVERLAY";
@@ -85,6 +86,7 @@ public class OverlayService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         createNotificationChannel();
+        createLockScreenChannel();
         startForeground(FG_NOTIF_ID, buildForegroundNotification());
 
         Log.d(TAG, "OverlayService created");
@@ -127,11 +129,29 @@ public class OverlayService extends Service {
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
                 | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        try {
-            startActivity(lockIntent);
-            Log.d(TAG, "Lock screen is active - launched LockScreenActivity");
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to launch LockScreenActivity from service", e);
+
+        PendingIntent fullScreenPi = PendingIntent.getActivity(
+                this,
+                2001,
+                lockIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Notification notification = new NotificationCompat.Builder(this, LOCKSCREEN_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_overlay_notification)
+                .setContentTitle("NotifyGlance")
+                .setContentText("Showing lock-screen notifications")
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setFullScreenIntent(fullScreenPi, true)
+                .build();
+
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) {
+            nm.notify(LOCKSCREEN_NOTIF_ID, notification);
+            Log.d(TAG, "Lock screen is active - posted full-screen notification intent");
         }
     }
 
@@ -331,6 +351,18 @@ public class OverlayService extends Service {
                 CHANNEL_ID, "NotifyGlance Service",
                 NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("Keeps overlay service running");
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.createNotificationChannel(channel);
+    }
+
+    private void createLockScreenChannel() {
+        NotificationChannel channel = new NotificationChannel(
+                LOCKSCREEN_CHANNEL_ID,
+                "NotifyGlance Lock Screen",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("Launches lock-screen notification cards");
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(channel);
     }
