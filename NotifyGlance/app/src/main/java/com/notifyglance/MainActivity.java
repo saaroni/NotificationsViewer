@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -70,15 +71,70 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Notification Access")
                 .setMessage("NotifyGlance needs notification access to read your notifications. " +
                         "On the next screen, find 'NotifyGlance' and enable it.")
-                .setPositiveButton("Open Settings", (d, w) ->
-                        startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)))
+                .setPositiveButton("Open Settings", (d, w) -> openNotificationAccessScreen())
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
     private void openOverlaySettings() {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+        Intent directIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:" + getPackageName()));
-        startActivity(intent);
+
+        if (directIntent.resolveActivity(getPackageManager()) != null) {
+            startActivity(directIntent);
+            return;
+        }
+
+        Intent appDetailsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName()));
+
+        if (appDetailsIntent.resolveActivity(getPackageManager()) != null) {
+            Toast.makeText(this,
+                    "Overlay settings unavailable on this device. Opening app settings instead.",
+                    Toast.LENGTH_LONG).show();
+            startActivity(appDetailsIntent);
+            return;
+        }
+
+        Toast.makeText(this,
+                "Unable to open settings on this device.",
+                Toast.LENGTH_LONG).show();
+    }
+
+    private void openNotificationAccessScreen() {
+        Intent listenerIntent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+        if (listenerIntent.resolveActivity(getPackageManager()) != null) {
+            startActivity(listenerIntent);
+            return;
+        }
+
+        Intent notificationIntent = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+        }
+
+        if (notificationIntent != null
+                && notificationIntent.resolveActivity(getPackageManager()) != null) {
+            Toast.makeText(this,
+                    "Notification access screen unavailable. Opening app notifications.",
+                    Toast.LENGTH_LONG).show();
+            startActivity(notificationIntent);
+            return;
+        }
+
+        Intent appDetailsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName()));
+        if (appDetailsIntent.resolveActivity(getPackageManager()) != null) {
+            Toast.makeText(this,
+                    "Notification settings unavailable. Opening app info instead.",
+                    Toast.LENGTH_LONG).show();
+            startActivity(appDetailsIntent);
+            return;
+        }
+
+        Toast.makeText(this,
+                "Unable to open settings on this device.",
+                Toast.LENGTH_LONG).show();
     }
 }
