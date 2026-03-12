@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NotifyGlance</string>
+    <string name="settings_title">Settings</string>
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="notification_service_label">NotifyGlance Notification Reader</string>
+
+    <!-- Timed session options -->
+    <string-array name="timed_session_labels">
+        <item>Off</item>
+        <item>Every Hour</item>
+        <item>Every X Minutes</item>
+    </string-array>
+    <string-array name="timed_session_values">
+        <item>off</item>
+        <item>hourly</item>
+        <item>custom</item>
+    </string-array>
+
+    <!-- Max cards -->
+    <string-array name="max_cards_labels">
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+    </string-array>
+    <string-array name="max_cards_values">
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+    </string-array>
+
+    <!-- Card display seconds -->
+    <string-array name="card_sec_labels">
+        <item>3 seconds</item>
+        <item>4.5 seconds</item>
+        <item>5 seconds</item>
+        <item>6 seconds</item>
+        <item>7 seconds</item>
+    </string-array>
+    <string-array name="card_sec_values">
+        <item>3</item>
+        <item>4.5</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+    </string-array>
+
+    <!-- Font sizes -->
+    <string-array name="font_size_labels">
+        <item>Large (16sp)</item>
+        <item>XL (20sp)</item>
+        <item>XXL (24sp)</item>
+    </string-array>
+    <string-array name="font_size_values">
+        <item>large</item>
+        <item>xl</item>
+        <item>xxl</item>
+    </string-array>
+
+    <!-- Empty placeholder -->
+    <string-array name="empty_array"/>
+</resources>

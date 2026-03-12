@@ -1,0 +1,344 @@
+package com.notifyglance.overlay;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.PowerManager;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.TextView;
+
+import androidx.core.app.NotificationCompat;
+
+import com.notifyglance.MainActivity;
+import com.notifyglance.R;
+import com.notifyglance.db.AppDatabase;
+import com.notifyglance.model.NotificationEntity;
+import com.notifyglance.util.Prefs;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class OverlayService extends Service {
+
+    private static final String TAG = "OverlayService";
+    private static final String CHANNEL_ID = "overlay_service_channel";
+    private static final int FG_NOTIF_ID = 1001;
+    public  static final String ACTION_TRIGGER = "com.notifyglance.TRIGGER_OVERLAY";
+    public  static final String ACTION_STOP    = "com.notifyglance.STOP_OVERLAY";
+    public  static final String ACTION_TEST    = "com.notifyglance.TEST_OVERLAY";
+
+    private WindowManager windowManager;
+    private View overlayView;
+    private Handler handler;
+    private Runnable advanceRunnable;
+    private ExecutorService executor;
+    private Prefs prefs;
+
+    private List<NotificationEntity> queue = new ArrayList<>();
+    private int currentIndex = 0;
+    private boolean overlayShowing = false;
+
+    // --- Static trigger helper ---
+    public static void triggerOverlay(Context ctx) {
+        Intent i = new Intent(ctx, OverlayService.class);
+        i.setAction(ACTION_TRIGGER);
+        ctx.startForegroundService(i);
+    }
+
+    public static void stopOverlay(Context ctx) {
+        Intent i = new Intent(ctx, OverlayService.class);
+        i.setAction(ACTION_STOP);
+        ctx.startService(i);
+    }
+
+    public static void testOverlay(Context ctx) {
+        Intent i = new Intent(ctx, OverlayService.class);
+        i.setAction(ACTION_TEST);
+        ctx.startForegroundService(i);
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        handler  = new Handler(Looper.getMainLooper());
+        executor = Executors.newSingleThreadExecutor();
+        prefs    = new Prefs(this);
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+
+        createNotificationChannel();
+        startForeground(FG_NOTIF_ID, buildForegroundNotification());
+
+        Log.d(TAG, "OverlayService created");
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) return START_STICKY;
+        String action = intent.getAction();
+        if (action == null) action = ACTION_TRIGGER;
+
+        switch (action) {
+            case ACTION_STOP:
+                hideOverlay();
+                stopSelf();
+                break;
+            case ACTION_TEST:
+                showTestCard();
+                break;
+            case ACTION_TRIGGER:
+            default:
+                loadQueueAndShow(false);
+                break;
+        }
+        return START_STICKY;
+    }
+
+    private void loadQueueAndShow(boolean isTest) {
+        executor.execute(() -> {
+            List<NotificationEntity> unpresented =
+                    AppDatabase.getInstance(this).notificationDao().getUnpresented();
+
+            if (unpresented.isEmpty()) {
+                // All items seen — reset and replay
+                AppDatabase.getInstance(this).notificationDao().resetAllPresented();
+                unpresented = AppDatabase.getInstance(this).notificationDao().getAllForCycle();
+            }
+
+            // Limit to maxCards
+            int max = prefs.getMaxCards();
+            List<NotificationEntity> toShow = unpresented.size() > max
+                    ? unpresented.subList(0, max)
+                    : new ArrayList<>(unpresented);
+
+            if (toShow.isEmpty()) {
+                Log.d(TAG, "No notifications to show");
+                return;
+            }
+
+            final List<NotificationEntity> finalList = toShow;
+            handler.post(() -> startCycle(finalList));
+        });
+    }
+
+    private void startCycle(List<NotificationEntity> items) {
+        if (overlayShowing) {
+            cancelAdvance();
+            hideOverlayView();
+        }
+        queue = items;
+        currentIndex = 0;
+        showCurrentCard();
+    }
+
+    private void showCurrentCard() {
+        if (currentIndex >= queue.size()) {
+            hideOverlay();
+            return;
+        }
+        NotificationEntity n = queue.get(currentIndex);
+        showOverlayCard(n);
+
+        // Mark as presented
+        int idx = currentIndex;
+        executor.execute(() ->
+                AppDatabase.getInstance(this).notificationDao().markPresented(queue.get(idx).id));
+
+        // Schedule advance
+        long delayMs = (long) (prefs.getCardDisplaySec() * 1000);
+        advanceRunnable = () -> {
+            currentIndex++;
+            showCurrentCard();
+        };
+        handler.postDelayed(advanceRunnable, delayMs);
+    }
+
+    private void showOverlayCard(NotificationEntity n) {
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            Log.w(TAG, "No overlay permission");
+            return;
+        }
+
+        // Inflate view
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View card = inflater.inflate(R.layout.overlay_card, null);
+
+        bindCard(card, n);
+        applyTheme(card);
+
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD,
+                PixelFormat.TRANSLUCENT
+        );
+        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        params.y = 80;
+
+        if (overlayView != null) {
+            try { windowManager.removeView(overlayView); } catch (Exception ignored) {}
+        }
+        overlayView = card;
+        windowManager.addView(overlayView, params);
+        overlayShowing = true;
+
+        prefs.setLastOverlayTime(System.currentTimeMillis());
+
+        acquireWakeLock();
+        Log.d(TAG, "Showing overlay for: " + n.title);
+    }
+
+    private void bindCard(View card, NotificationEntity n) {
+        TextView tvApp   = card.findViewById(R.id.tv_app_name);
+        TextView tvTitle = card.findViewById(R.id.tv_title);
+        TextView tvText  = card.findViewById(R.id.tv_text);
+        TextView tvTime  = card.findViewById(R.id.tv_time);
+        TextView tvIndex = card.findViewById(R.id.tv_index);
+
+        tvApp.setText(n.appLabel != null ? n.appLabel : n.packageName);
+        tvTitle.setText(n.title != null ? n.title : "");
+        tvText.setText(n.text  != null ? n.text  : "");
+        tvTime.setText(formatTime(n.postedAt));
+        tvIndex.setText((currentIndex + 1) + " / " + queue.size());
+
+        // Font size
+        float sp = fontSizeSp();
+        tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp);
+        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
+    }
+
+    private void applyTheme(View card) {
+        if (prefs.isHighContrast()) {
+            card.setBackgroundColor(Color.BLACK);
+            setTextColor(card, Color.WHITE);
+        }
+    }
+
+    private void setTextColor(View root, int color) {
+        if (root instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                if (child instanceof TextView) ((TextView) child).setTextColor(color);
+                else setTextColor(child, color);
+            }
+        }
+    }
+
+    private float fontSizeSp() {
+        switch (prefs.getFontSize()) {
+            case "large": return 16f;
+            case "xxl":   return 24f;
+            case "xl":
+            default:      return 20f;
+        }
+    }
+
+    private void showTestCard() {
+        NotificationEntity demo = new NotificationEntity(
+                "com.example.demo", "Demo App",
+                "Test Notification", "This is a test overlay card from NotifyGlance.",
+                "", System.currentTimeMillis(), false, 0);
+        demo.id = -1;
+        List<NotificationEntity> list = new ArrayList<>();
+        list.add(demo);
+        handler.post(() -> startCycle(list));
+    }
+
+    private void hideOverlay() {
+        cancelAdvance();
+        hideOverlayView();
+        releaseWakeLock();
+        overlayShowing = false;
+    }
+
+    private void hideOverlayView() {
+        if (overlayView != null) {
+            try { windowManager.removeView(overlayView); } catch (Exception ignored) {}
+            overlayView = null;
+        }
+    }
+
+    private void cancelAdvance() {
+        if (advanceRunnable != null) {
+            handler.removeCallbacks(advanceRunnable);
+            advanceRunnable = null;
+        }
+    }
+
+    private void acquireWakeLock() {
+        // Use WakeUtil for proper screen wake
+        com.notifyglance.util.WakeUtil.acquireTemporary(this);
+    }
+
+    private void releaseWakeLock() {
+        com.notifyglance.util.WakeUtil.release();
+    }
+
+    private String formatTime(long ts) {
+        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ts));
+    }
+
+    private void createNotificationChannel() {
+        NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID, "NotifyGlance Service",
+                NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Keeps overlay service running");
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.createNotificationChannel(channel);
+    }
+
+    private Notification buildForegroundNotification() {
+        Intent stopIntent = new Intent(this, OverlayService.class);
+        stopIntent.setAction(ACTION_STOP);
+        PendingIntent stopPi = PendingIntent.getService(this, 0, stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Intent openIntent = new Intent(this, MainActivity.class);
+        PendingIntent openPi = PendingIntent.getActivity(this, 0, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("NotifyGlance Active")
+                .setContentText("Hands-free overlay is running")
+                .setSmallIcon(R.drawable.ic_overlay_notification)
+                .setContentIntent(openPi)
+                .addAction(R.drawable.ic_stop, "Stop", stopPi)
+                .setOngoing(true)
+                .build();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) { return null; }
+
+    @Override
+    public void onDestroy() {
+        hideOverlay();
+        if (executor != null) executor.shutdown();
+        super.onDestroy();
+        Log.d(TAG, "OverlayService destroyed");
+    }
+}

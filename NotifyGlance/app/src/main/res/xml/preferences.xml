@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- ── Master Toggle ─────────────────────────────────── -->
+    <PreferenceCategory android:title="Master Control">
+
+        <SwitchPreferenceCompat
+            android:key="pref_master_toggle"
+            android:title="Hands-Free Overlay"
+            android:summary="Enable auto-cycling notification overlay"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="pref_capture_while_off"
+            android:title="Capture While Off"
+            android:summary="Continue storing notifications when overlay is disabled"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <!-- ── When to Display ───────────────────────────────── -->
+    <PreferenceCategory android:title="When to Display">
+
+        <CheckBoxPreference
+            android:key="pref_trigger_on_new"
+            android:title="Trigger on New Notifications"
+            android:summary="Show overlay immediately when a new notification arrives"
+            android:defaultValue="true" />
+
+        <ListPreference
+            android:key="pref_timed_session"
+            android:title="Timed Sessions"
+            android:summary="%s"
+            android:entries="@array/timed_session_labels"
+            android:entryValues="@array/timed_session_values"
+            android:defaultValue="off" />
+
+        <EditTextPreference
+            android:key="pref_custom_interval"
+            android:title="Custom Interval (minutes)"
+            android:summary="Enter a value between 5 and 60"
+            android:defaultValue="15"
+            android:inputType="number"
+            android:visible="false" />
+
+    </PreferenceCategory>
+
+    <!-- ── Session Length ────────────────────────────────── -->
+    <PreferenceCategory android:title="Session Length">
+
+        <ListPreference
+            android:key="pref_max_cards"
+            android:title="Max Cards Per Session"
+            android:summary="%s cards"
+            android:entries="@array/max_cards_labels"
+            android:entryValues="@array/max_cards_values"
+            android:defaultValue="5" />
+
+        <ListPreference
+            android:key="pref_card_display_sec"
+            android:title="Per-Card Display Time"
+            android:summary="%s seconds per card"
+            android:entries="@array/card_sec_labels"
+            android:entryValues="@array/card_sec_values"
+            android:defaultValue="5" />
+
+    </PreferenceCategory>
+
+    <!-- ── Quiet Hours ───────────────────────────────────── -->
+    <PreferenceCategory android:title="Quiet Hours">
+
+        <EditTextPreference
+            android:key="pref_quiet_start"
+            android:title="Quiet Hours Start"
+            android:summary="Format: HH:mm (e.g. 22:00)"
+            android:defaultValue="" />
+
+        <EditTextPreference
+            android:key="pref_quiet_end"
+            android:title="Quiet Hours End"
+            android:summary="Format: HH:mm (e.g. 07:00)"
+            android:defaultValue="" />
+
+    </PreferenceCategory>
+
+    <!-- ── Filters ───────────────────────────────────────── -->
+    <PreferenceCategory android:title="Notification Filters">
+
+        <MultiSelectListPreference
+            android:key="pref_allowed_apps"
+            android:title="Allowed Apps"
+            android:summary="Select apps to show (empty = all apps)"
+            android:entries="@array/empty_array"
+            android:entryValues="@array/empty_array" />
+
+        <CheckBoxPreference
+            android:key="pref_suppress_ongoing"
+            android:title="Suppress Ongoing / System Notifications"
+            android:summary="Hide media players, downloads, and foreground service spam"
+            android:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <!-- ── Appearance ────────────────────────────────────── -->
+    <PreferenceCategory android:title="Appearance">
+
+        <ListPreference
+            android:key="pref_font_size"
+            android:title="Font Size"
+            android:summary="%s"
+            android:entries="@array/font_size_labels"
+            android:entryValues="@array/font_size_values"
+            android:defaultValue="xl" />
+
+        <CheckBoxPreference
+            android:key="pref_high_contrast"
+            android:title="High-Contrast Theme"
+            android:summary="Black background with white text"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <!-- ── Diagnostics ───────────────────────────────────── -->
+    <PreferenceCategory android:title="About / Diagnostics">
+
+        <Preference
+            android:key="pref_diagnostics_screen"
+            android:title="Open Diagnostics"
+            android:summary="Service status, last overlay time, and test tools" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
