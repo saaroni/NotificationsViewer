@@ -1,6 +1,6 @@
 package com.notifyglance.overlay;
 
-import android.app.ActivityNotFoundException;
+import android.content.ActivityNotFoundException;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
