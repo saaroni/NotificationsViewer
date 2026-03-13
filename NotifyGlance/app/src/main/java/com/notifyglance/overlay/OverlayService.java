@@ -188,12 +188,15 @@ public class OverlayService extends Service {
 
     private void loadQueueAndShow() {
         executor.execute(() -> {
+            long lookbackThreshold = System.currentTimeMillis()
+                    - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
+
             List<NotificationEntity> unpresented =
-                    AppDatabase.getInstance(this).notificationDao().getUnpresented();
+                    AppDatabase.getInstance(this).notificationDao().getUnpresentedSince(lookbackThreshold);
 
             if (unpresented.isEmpty()) {
-                AppDatabase.getInstance(this).notificationDao().resetAllPresented();
-                unpresented = AppDatabase.getInstance(this).notificationDao().getAllForCycle();
+                AppDatabase.getInstance(this).notificationDao().resetPresentedSince(lookbackThreshold);
+                unpresented = AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
             }
 
             int max = prefs.getMaxCards();
@@ -202,7 +205,7 @@ public class OverlayService extends Service {
                     : new ArrayList<>(unpresented);
 
             if (toShow.isEmpty()) {
-                Log.d(TAG, "No notifications to show");
+                Log.d(TAG, "No notifications to show in lookback window");
                 return;
             }
 

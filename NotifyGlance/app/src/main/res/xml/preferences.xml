@@ -48,6 +48,14 @@
             android:entryValues="@array/card_sec_values"
             android:defaultValue="5" />
 
+        <EditTextPreference
+            android:key="pref_overlay_lookback_minutes"
+            android:title="Show Notifications From Last (minutes)"
+            android:summary="Enter a value between 15 and 360"
+            android:defaultValue="60"
+            android:inputType="number" />
+
+
     </PreferenceCategory>
 
     <!-- ── Quiet Hours ───────────────────────────────────── -->
