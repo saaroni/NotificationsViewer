@@ -2,23 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- ── Master Toggle ─────────────────────────────────── -->
-    <PreferenceCategory android:title="Master Control">
-
-        <SwitchPreferenceCompat
-            android:key="pref_master_toggle"
-            android:title="Hands-Free Overlay"
-            android:summary="Enable auto-cycling notification overlay"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
-            android:key="pref_capture_while_off"
-            android:title="Capture While Off"
-            android:summary="Continue storing notifications when overlay is disabled"
-            android:defaultValue="true" />
-
-    </PreferenceCategory>
-
     <!-- ── When to Display ───────────────────────────────── -->
     <PreferenceCategory android:title="When to Display">
 

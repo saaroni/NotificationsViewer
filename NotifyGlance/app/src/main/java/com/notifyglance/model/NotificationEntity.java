@@ -15,6 +15,7 @@ public class NotificationEntity {
     public String text;
     public String subText;
     public long postedAt;
+    public long capturedAt;
     public boolean presented;   // shown in overlay at least once
     public boolean isOngoing;
     public int importance;
@@ -22,14 +23,16 @@ public class NotificationEntity {
     public NotificationEntity() {}
 
     public NotificationEntity(String packageName, String appLabel,
-                               String title, String text, String subText,
-                               long postedAt, boolean isOngoing, int importance) {
+                              String title, String text, String subText,
+                              long postedAt, long capturedAt,
+                              boolean isOngoing, int importance) {
         this.packageName = packageName;
         this.appLabel    = appLabel;
         this.title       = title;
         this.text        = text;
         this.subText     = subText;
         this.postedAt    = postedAt;
+        this.capturedAt  = capturedAt;
         this.presented   = false;
         this.isOngoing   = isOngoing;
         this.importance  = importance;
