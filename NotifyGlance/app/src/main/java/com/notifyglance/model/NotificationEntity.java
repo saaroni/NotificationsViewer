@@ -1,6 +1,7 @@
 package com.notifyglance.model;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "notifications")
@@ -22,6 +23,7 @@ public class NotificationEntity {
 
     public NotificationEntity() {}
 
+    @Ignore
     public NotificationEntity(String packageName, String appLabel,
                               String title, String text, String subText,
                               long postedAt, long capturedAt,
