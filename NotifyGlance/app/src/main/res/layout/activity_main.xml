@@ -124,11 +124,13 @@
 
         <Button
             android:id="@+id/btn_settings"
-            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="54dp"
             android:text="More Settings"
-            android:textAllCaps="false" />
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/text_on_primary" />
 
     </LinearLayout>
 </ScrollView>

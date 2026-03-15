@@ -48,16 +48,21 @@
         <Button
             android:id="@+id/btn_test_overlay"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="🧪 Test Overlay Now"
+            android:textSize="16sp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/text_on_primary"
             android:layout_marginBottom="12dp" />
 
         <Button
             android:id="@+id/btn_clear_db"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:text="Clear Stored Notifications" />
+            android:layout_height="54dp"
+            android:text="Clear Stored Notifications"
+            android:textSize="16sp"
+            android:backgroundTint="@color/primary_dark"
+            android:textColor="@color/text_on_primary" />
 
     </LinearLayout>
 </ScrollView>
