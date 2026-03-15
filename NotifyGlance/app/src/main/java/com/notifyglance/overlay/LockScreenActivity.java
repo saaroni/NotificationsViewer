@@ -185,7 +185,8 @@ public class LockScreenActivity extends AppCompatActivity {
             llNotifications.addView(item);
         }
 
-        scheduleAutoScroll();
+        svNotifications.scrollTo(0, 0);
+        svNotifications.post(this::scheduleAutoScroll);
     }
 
     private void bindListItem(View card, NotificationEntity n) {
@@ -208,6 +209,11 @@ public class LockScreenActivity extends AppCompatActivity {
         long delayMs = (long) (prefs.getCardDisplaySec() * 1000);
         currentIndex = 0;
 
+        if (llNotifications.getChildCount() <= 1) {
+            handler.postDelayed(this::finishOverlay, delayMs);
+            return;
+        }
+
         advanceRunnable = new Runnable() {
             @Override
             public void run() {
@@ -218,7 +224,9 @@ public class LockScreenActivity extends AppCompatActivity {
                 }
 
                 View next = llNotifications.getChildAt(currentIndex);
-                svNotifications.smoothScrollTo(0, next.getTop());
+                int targetY = next.getTop();
+                int maxY = Math.max(0, llNotifications.getHeight() - svNotifications.getHeight());
+                svNotifications.smoothScrollTo(0, Math.min(targetY, maxY));
                 handler.postDelayed(this, delayMs);
             }
         };
