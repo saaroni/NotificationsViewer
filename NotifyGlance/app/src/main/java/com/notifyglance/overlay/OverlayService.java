@@ -47,6 +47,7 @@ public class OverlayService extends Service {
     private static final int FG_NOTIF_ID = 1001;
     private static final int LOCKSCREEN_NOTIF_ID = 1002;
     public static final String ACTION_TRIGGER = "com.notifyglance.TRIGGER_OVERLAY";
+    public static final String ACTION_TRIGGER_CARD = "com.notifyglance.TRIGGER_OVERLAY_CARD";
     public static final String ACTION_STOP = "com.notifyglance.STOP_OVERLAY";
     public static final String ACTION_TEST = "com.notifyglance.TEST_OVERLAY";
 
@@ -72,6 +73,12 @@ public class OverlayService extends Service {
         Intent i = new Intent(ctx, OverlayService.class);
         i.setAction(ACTION_STOP);
         ctx.startService(i);
+    }
+
+    public static void triggerOverlayCard(Context ctx) {
+        Intent i = new Intent(ctx, OverlayService.class);
+        i.setAction(ACTION_TRIGGER_CARD);
+        ctx.startForegroundService(i);
     }
 
     public static void testOverlay(Context ctx) {
@@ -109,12 +116,19 @@ public class OverlayService extends Service {
             case ACTION_TEST:
                 showTestCard();
                 break;
+            case ACTION_TRIGGER_CARD:
+                if (isDeviceLocked()) {
+                    launchLockScreenFlow();
+                } else {
+                    loadQueueAndShow(true);
+                }
+                break;
             case ACTION_TRIGGER:
             default:
                 if (isDeviceLocked()) {
                     launchLockScreenFlow();
                 } else {
-                    loadQueueAndShow();
+                    loadQueueAndShow(false);
                 }
                 break;
         }
@@ -186,7 +200,7 @@ public class OverlayService extends Service {
         }
     }
 
-    private void loadQueueAndShow() {
+    private void loadQueueAndShow(boolean cardMode) {
         executor.execute(() -> {
             long lookbackThreshold = System.currentTimeMillis()
                     - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
@@ -214,7 +228,13 @@ public class OverlayService extends Service {
             }
 
             List<NotificationEntity> finalList = new ArrayList<>(toShow);
-            handler.post(() -> showCountdownThenList(finalList));
+            handler.post(() -> {
+                if (cardMode) {
+                    showOverlayCards(finalList);
+                } else {
+                    showCountdownThenList(finalList);
+                }
+            });
         });
     }
 
@@ -269,7 +289,9 @@ public class OverlayService extends Service {
         LayoutInflater inflater = LayoutInflater.from(this);
         View panel = inflater.inflate(R.layout.overlay_list, null);
         overlayScrollView = panel.findViewById(R.id.sv_notifications);
+        View closeButton = panel.findViewById(R.id.btn_close_overlay);
         LinearLayout listContainer = panel.findViewById(R.id.ll_notifications);
+        closeButton.setOnClickListener(v -> hideOverlay());
 
         for (NotificationEntity n : queue) {
             View item = inflater.inflate(R.layout.overlay_list_item, listContainer, false);
@@ -285,6 +307,68 @@ public class OverlayService extends Service {
         acquireWakeLock();
 
         scheduleAutoScroll();
+    }
+
+    private void showOverlayCards(List<NotificationEntity> items) {
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            Log.w(TAG, "No overlay permission");
+            return;
+        }
+
+        hideOverlayView();
+        cancelAdvance();
+
+        queue = new ArrayList<>(items);
+        scrollIndex = 0;
+        showCurrentOverlayCard();
+    }
+
+    private void showCurrentOverlayCard() {
+        if (scrollIndex >= queue.size()) {
+            hideOverlay();
+            return;
+        }
+
+        hideOverlayView();
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View card = inflater.inflate(R.layout.overlay_card, null);
+
+        bindOverlayCard(card, queue.get(scrollIndex));
+        applyTheme(card);
+
+        View closeButton = card.findViewById(R.id.btn_close_overlay);
+        closeButton.setOnClickListener(v -> hideOverlay());
+
+        overlayView = card;
+        windowManager.addView(overlayView, buildOverlayLayoutParams());
+        overlayShowing = true;
+        prefs.setLastOverlayTime(System.currentTimeMillis());
+        acquireWakeLock();
+
+        long delayMs = (long) (prefs.getCardDisplaySec() * 1000);
+        advanceRunnable = () -> {
+            scrollIndex++;
+            showCurrentOverlayCard();
+        };
+        handler.postDelayed(advanceRunnable, delayMs);
+    }
+
+    private void bindOverlayCard(View card, NotificationEntity n) {
+        TextView tvApp = card.findViewById(R.id.tv_app_name);
+        TextView tvTitle = card.findViewById(R.id.tv_title);
+        TextView tvText = card.findViewById(R.id.tv_text);
+        TextView tvTime = card.findViewById(R.id.tv_time);
+        TextView tvIndex = card.findViewById(R.id.tv_index);
+
+        tvApp.setText(n.appLabel != null ? n.appLabel : n.packageName);
+        tvTitle.setText(n.title != null ? n.title : "");
+        tvText.setText(n.text != null ? n.text : "");
+        tvTime.setText(formatTime(n.postedAt));
+        tvIndex.setText((scrollIndex + 1) + " / " + queue.size());
+
+        float sp = fontSizeSp();
+        tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp);
+        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
     }
 
     private WindowManager.LayoutParams buildOverlayLayoutParams() {
@@ -432,6 +516,10 @@ public class OverlayService extends Service {
 
     private String formatDateTime(long ts) {
         return new SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault()).format(new Date(ts));
+    }
+
+    private String formatTime(long ts) {
+        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(ts));
     }
 
     private void createNotificationChannel() {

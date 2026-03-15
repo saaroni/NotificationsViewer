@@ -53,6 +53,18 @@
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp" />
 
+            <TextView
+                android:id="@+id/btn_close_overlay"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="✕"
+                android:textColor="@color/text_secondary"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:contentDescription="Close overlay" />
+
         </LinearLayout>
 
         <!-- Divider -->

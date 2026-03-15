@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.WindowManager;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -90,6 +91,11 @@ public class LockScreenActivity extends AppCompatActivity {
         tvText    = findViewById(R.id.tv_text);
         tvTime    = findViewById(R.id.tv_time);
         tvIndex   = findViewById(R.id.tv_index);
+        View closeButton = findViewById(R.id.btn_close_overlay);
+        closeButton.setOnClickListener(v -> {
+            WakeUtil.release();
+            finish();
+        });
 
         handler  = new Handler(Looper.getMainLooper());
         executor = Executors.newSingleThreadExecutor();
@@ -185,12 +191,14 @@ public class LockScreenActivity extends AppCompatActivity {
 
         // High contrast
         if (prefs.isHighContrast()) {
+            findViewById(android.R.id.content).setBackgroundColor(android.graphics.Color.BLACK);
             findViewById(R.id.card_root).setBackgroundColor(android.graphics.Color.BLACK);
             tvTitle.setTextColor(android.graphics.Color.WHITE);
             tvText.setTextColor(android.graphics.Color.WHITE);
             tvAppName.setTextColor(android.graphics.Color.WHITE);
             tvTime.setTextColor(android.graphics.Color.WHITE);
             tvIndex.setTextColor(android.graphics.Color.WHITE);
+            ((TextView) findViewById(R.id.btn_close_overlay)).setTextColor(android.graphics.Color.WHITE);
         }
     }
 
