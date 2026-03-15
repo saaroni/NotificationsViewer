@@ -24,11 +24,11 @@ public interface NotificationDao {
     List<NotificationEntity> getAll();
 
     /** Items not yet presented (for queue) within lookback window */
-    @Query("SELECT * FROM notifications WHERE presented = 0 AND capturedAt >= :threshold ORDER BY postedAt ASC")
+    @Query("SELECT * FROM notifications WHERE presented = 0 AND capturedAt >= :threshold ORDER BY postedAt DESC")
     List<NotificationEntity> getUnpresentedSince(long threshold);
 
     /** All items (for repeat cycle after all viewed) within lookback window */
-    @Query("SELECT * FROM notifications WHERE capturedAt >= :threshold ORDER BY postedAt ASC")
+    @Query("SELECT * FROM notifications WHERE capturedAt >= :threshold ORDER BY postedAt DESC")
     List<NotificationEntity> getAllForCycleSince(long threshold);
 
 

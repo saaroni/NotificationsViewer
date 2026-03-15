@@ -1,12 +1,10 @@
 package com.notifyglance.overlay;
 
-import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -43,9 +41,7 @@ public class OverlayService extends Service {
 
     private static final String TAG = "OverlayService";
     private static final String CHANNEL_ID = "overlay_service_channel";
-    private static final String LOCKSCREEN_CHANNEL_ID = "overlay_lockscreen_channel";
     private static final int FG_NOTIF_ID = 1001;
-    private static final int LOCKSCREEN_NOTIF_ID = 1002;
     public static final String ACTION_TRIGGER = "com.notifyglance.TRIGGER_OVERLAY";
     public static final String ACTION_STOP = "com.notifyglance.STOP_OVERLAY";
     public static final String ACTION_TEST = "com.notifyglance.TEST_OVERLAY";
@@ -89,7 +85,6 @@ public class OverlayService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         createNotificationChannel();
-        createLockScreenChannel();
         startForeground(FG_NOTIF_ID, buildForegroundNotification());
 
         Log.d(TAG, "OverlayService created");
@@ -111,79 +106,11 @@ public class OverlayService extends Service {
                 break;
             case ACTION_TRIGGER:
             default:
-                if (isDeviceLocked()) {
-                    launchLockScreenFlow();
-                } else {
-                    loadQueueAndShow();
-                }
+                // Same behavior for unlocked and locked screen.
+                loadQueueAndShow();
                 break;
         }
         return START_STICKY;
-    }
-
-    private boolean isDeviceLocked() {
-        KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
-        return km != null && km.isKeyguardLocked();
-    }
-
-    private void launchLockScreenFlow() {
-        Log.d(TAG, "Device locked - attempting lock-screen activity launch flow");
-        if (tryLaunchLockScreenActivity()) {
-            return;
-        }
-        Log.d(TAG, "Direct launch unavailable - using full-screen notification fallback");
-        postLockScreenFullScreenNotification();
-    }
-
-    private boolean tryLaunchLockScreenActivity() {
-        Intent lockIntent = new Intent(this, LockScreenActivity.class);
-        lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP
-                | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-
-        try {
-            startActivity(lockIntent);
-            Log.d(TAG, "Lock screen is active - launched LockScreenActivity directly");
-            return true;
-        } catch (ActivityNotFoundException | SecurityException e) {
-            Log.w(TAG, "Direct LockScreenActivity launch failed, falling back to full-screen notification", e);
-            return false;
-        }
-    }
-
-    private void postLockScreenFullScreenNotification() {
-        Intent lockIntent = new Intent(this, LockScreenActivity.class);
-        lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP
-                | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-
-        PendingIntent fullScreenPi = PendingIntent.getActivity(
-                this,
-                2001,
-                lockIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        Notification notification = new NotificationCompat.Builder(this, LOCKSCREEN_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_overlay_notification)
-                .setContentTitle("NotifyGlance")
-                .setContentText("Showing lock-screen notifications")
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setAutoCancel(true)
-                .setFullScreenIntent(fullScreenPi, true)
-                .build();
-
-        NotificationManager nm = getSystemService(NotificationManager.class);
-        if (nm != null) {
-            nm.notify(LOCKSCREEN_NOTIF_ID, notification);
-            Log.d(TAG, "Lock screen is active - posted full-screen notification intent");
-        } else {
-            Log.w(TAG, "NotificationManager unavailable; could not post full-screen lock-screen notification");
-        }
     }
 
     private void loadQueueAndShow() {
@@ -213,8 +140,45 @@ public class OverlayService extends Service {
                 AppDatabase.getInstance(this).notificationDao().markPresented(item.id);
             }
 
-            handler.post(() -> showOverlayList(toShow));
+            List<NotificationEntity> finalList = new ArrayList<>(toShow);
+            handler.post(() -> showCountdownThenList(finalList));
         });
+    }
+
+    private void showCountdownThenList(List<NotificationEntity> items) {
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            Log.w(TAG, "No overlay permission");
+            return;
+        }
+
+        hideOverlayView();
+        cancelAdvance();
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View countdownView = inflater.inflate(R.layout.overlay_countdown, null);
+        TextView tvCountdown = countdownView.findViewById(R.id.tv_countdown);
+
+        WindowManager.LayoutParams params = buildOverlayLayoutParams();
+        overlayView = countdownView;
+        windowManager.addView(overlayView, params);
+        overlayShowing = true;
+        acquireWakeLock();
+
+        final int[] remaining = {5};
+        Runnable countdownRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!overlayShowing || overlayView == null) return;
+                tvCountdown.setText(String.valueOf(remaining[0]));
+                if (remaining[0] == 0) {
+                    showOverlayList(items);
+                    return;
+                }
+                remaining[0]--;
+                handler.postDelayed(this, 1000);
+            }
+        };
+        handler.post(countdownRunnable);
     }
 
     private void showOverlayList(List<NotificationEntity> items) {
@@ -241,9 +205,22 @@ public class OverlayService extends Service {
             listContainer.addView(item);
         }
 
+        overlayView = panel;
+        windowManager.addView(overlayView, buildOverlayLayoutParams());
+        overlayShowing = true;
+        prefs.setLastOverlayTime(System.currentTimeMillis());
+        acquireWakeLock();
+
+        scheduleAutoScroll();
+    }
+
+    private WindowManager.LayoutParams buildOverlayLayoutParams() {
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int overlayHeight = (int) (screenHeight * 0.75f);
+
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                overlayHeight,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                         | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
@@ -255,14 +232,7 @@ public class OverlayService extends Service {
         );
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         params.y = 60;
-
-        overlayView = panel;
-        windowManager.addView(overlayView, params);
-        overlayShowing = true;
-        prefs.setLastOverlayTime(System.currentTimeMillis());
-        acquireWakeLock();
-
-        scheduleAutoScroll();
+        return params;
     }
 
     private void bindListItem(View card, NotificationEntity n) {
@@ -338,18 +308,20 @@ public class OverlayService extends Service {
 
     private void showTestCard() {
         long now = System.currentTimeMillis();
+        NotificationEntity newest = new NotificationEntity(
+                "com.example.chat", "Messages",
+                "Dinner at 8?", "Let's meet near the station. I'll be there in 15.",
+                "", now + 1000, now + 1000, false, 0);
         NotificationEntity demo = new NotificationEntity(
                 "com.example.demo", "Demo App",
                 "Test Notification", "This is a test overlay card from NotifyGlance.",
                 "", now, now, false, 0);
-        demo.id = -1;
+        newest.id = -1;
+        demo.id = -2;
         List<NotificationEntity> list = new ArrayList<>();
+        list.add(newest);
         list.add(demo);
-        list.add(new NotificationEntity(
-                "com.example.chat", "Messages",
-                "Dinner at 8?", "Let's meet near the station. I'll be there in 15.",
-                "", now + 1000, now + 1000, false, 0));
-        handler.post(() -> showOverlayList(list));
+        handler.post(() -> showCountdownThenList(list));
     }
 
     private void hideOverlay() {
@@ -394,18 +366,6 @@ public class OverlayService extends Service {
                 CHANNEL_ID, "NotifyGlance Service",
                 NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("Keeps overlay service running");
-        NotificationManager nm = getSystemService(NotificationManager.class);
-        if (nm != null) nm.createNotificationChannel(channel);
-    }
-
-    private void createLockScreenChannel() {
-        NotificationChannel channel = new NotificationChannel(
-                LOCKSCREEN_CHANNEL_ID,
-                "NotifyGlance Lock Screen",
-                NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription("Launches lock-screen notification cards");
-        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(channel);
     }
