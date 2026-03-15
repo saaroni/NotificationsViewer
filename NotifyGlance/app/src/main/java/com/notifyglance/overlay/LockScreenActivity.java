@@ -107,6 +107,7 @@ public class LockScreenActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         Log.d(TAG, "onNewIntent - restarting lock-screen list flow");
         cancelAdvance();
         queue.clear();
@@ -147,9 +148,20 @@ public class LockScreenActivity extends AppCompatActivity {
                 queue = finalList;
                 currentIndex = 0;
                 prefs.setLastOverlayTime(System.currentTimeMillis());
-                showCountdownThenList();
+                if (shouldSkipCountdown()) {
+                    showNotificationList();
+                } else {
+                    showCountdownThenList();
+                }
             });
         });
+    }
+
+
+    private boolean shouldSkipCountdown() {
+        Intent intent = getIntent();
+        return intent != null
+                && intent.getBooleanExtra(OverlayService.EXTRA_SKIP_LOCK_COUNTDOWN, false);
     }
 
     private void showCountdownThenList() {
