@@ -86,9 +86,12 @@ public class GlanceNotificationListenerService extends NotificationListenerServi
             boolean isOngoing2 = (notification.flags & Notification.FLAG_ONGOING_EVENT) != 0;
             int importance = sbn.getNotification().priority;
 
+            long capturedAt = System.currentTimeMillis();
+            long postedAt = sbn.getPostTime() > 0 ? sbn.getPostTime() : capturedAt;
+
             NotificationEntity entity = new NotificationEntity(
                     pkg, appLabel, title, text, sub,
-                    System.currentTimeMillis(), isOngoing2, importance);
+                    postedAt, capturedAt, isOngoing2, importance);
 
             AppDatabase.getInstance(this).notificationDao().insert(entity);
             Log.d(TAG, "Stored notification from " + appLabel + ": " + title);

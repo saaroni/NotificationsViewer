@@ -25,6 +25,7 @@ public class Prefs {
     public static final String KEY_HIGH_CONTRAST          = "pref_high_contrast";
     public static final String KEY_LAST_OVERLAY_TIME      = "pref_last_overlay_time";
     public static final String KEY_CAPTURE_WHILE_OFF      = "pref_capture_while_off";
+    public static final String KEY_OVERLAY_LOOKBACK_MIN   = "pref_overlay_lookback_minutes";
 
     public static final String TIMED_OFF     = "off";
     public static final String TIMED_HOURLY  = "hourly";
@@ -50,6 +51,12 @@ public class Prefs {
     public boolean isHighContrast()       { return sp.getBoolean(KEY_HIGH_CONTRAST, false); }
     public long    getLastOverlayTime()   { return sp.getLong(KEY_LAST_OVERLAY_TIME, 0); }
     public boolean isCaptureWhileOff()    { return sp.getBoolean(KEY_CAPTURE_WHILE_OFF, true); }
+    public int getOverlayLookbackMinutes() {
+        int mins = parseInt(sp.getString(KEY_OVERLAY_LOOKBACK_MIN, "60"), 60);
+        if (mins < 15) return 15;
+        if (mins > 360) return 360;
+        return mins;
+    }
 
     public void setLastOverlayTime(long ts) {
         sp.edit().putLong(KEY_LAST_OVERLAY_TIME, ts).apply();

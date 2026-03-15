@@ -2,23 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- ── Master Toggle ─────────────────────────────────── -->
-    <PreferenceCategory android:title="Master Control">
-
-        <SwitchPreferenceCompat
-            android:key="pref_master_toggle"
-            android:title="Hands-Free Overlay"
-            android:summary="Enable auto-cycling notification overlay"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
-            android:key="pref_capture_while_off"
-            android:title="Capture While Off"
-            android:summary="Continue storing notifications when overlay is disabled"
-            android:defaultValue="true" />
-
-    </PreferenceCategory>
-
     <!-- ── When to Display ───────────────────────────────── -->
     <PreferenceCategory android:title="When to Display">
 
@@ -64,6 +47,14 @@
             android:entries="@array/card_sec_labels"
             android:entryValues="@array/card_sec_values"
             android:defaultValue="5" />
+
+        <EditTextPreference
+            android:key="pref_overlay_lookback_minutes"
+            android:title="Show Notifications From Last (minutes)"
+            android:summary="Enter a value between 15 and 360"
+            android:defaultValue="60"
+            android:inputType="number" />
+
 
     </PreferenceCategory>
 

@@ -8,13 +8,17 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
 import com.notifyglance.settings.SettingsActivity;
+import com.notifyglance.util.AlarmScheduler;
+import com.notifyglance.util.Prefs;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvStatusNls;
     private TextView tvStatusOverlay;
     private TextView tvMasterStatus;
+    private Switch switchMaster;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         tvStatusNls     = findViewById(R.id.tv_status_nls);
         tvStatusOverlay = findViewById(R.id.tv_status_overlay);
         tvMasterStatus  = findViewById(R.id.tv_master_status);
+        switchMaster    = findViewById(R.id.switch_master);
 
         Button btnGrantNls     = findViewById(R.id.btn_grant_nls);
         Button btnGrantOverlay = findViewById(R.id.btn_grant_overlay);
@@ -41,6 +47,15 @@ public class MainActivity extends AppCompatActivity {
         btnGrantOverlay.setOnClickListener(v -> openOverlaySettings());
         btnSettings.setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
+
+        switchMaster.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            PreferenceManager.getDefaultSharedPreferences(this)
+                    .edit()
+                    .putBoolean(Prefs.KEY_MASTER_TOGGLE, isChecked)
+                    .apply();
+            AlarmScheduler.schedule(this);
+            updateStatusViews();
+        });
     }
 
     @Override
@@ -52,11 +67,14 @@ public class MainActivity extends AppCompatActivity {
     private void updateStatusViews() {
         boolean nlsGranted     = isNotificationListenerGranted();
         boolean overlayGranted = Settings.canDrawOverlays(this);
-        boolean masterOn       = new com.notifyglance.util.Prefs(this).isMasterOn();
+        boolean masterOn       = new Prefs(this).isMasterOn();
 
+        switchMaster.setChecked(masterOn);
         tvStatusNls.setText("Notification Access: " + (nlsGranted ? "✅ Granted" : "❌ Not Granted"));
         tvStatusOverlay.setText("Overlay Permission: " + (overlayGranted ? "✅ Granted" : "❌ Not Granted"));
-        tvMasterStatus.setText("Hands-Free Overlay: " + (masterOn ? "🟢 ON" : "🔴 OFF"));
+        tvMasterStatus.setText(masterOn
+                ? "Overlay is active. New notifications can trigger hands-free display."
+                : "Overlay is off. Turn it on to enable automatic display.");
     }
 
     private boolean isNotificationListenerGranted() {

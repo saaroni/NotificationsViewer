@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background">
@@ -9,97 +10,127 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
-        <!-- Header -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="NotifyGlance"
-            android:textSize="28sp"
+            android:textSize="30sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"
             android:gravity="center"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginTop="8dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Hands-free notification overlay"
-            android:textSize="14sp"
+            android:text="A cleaner, hands-free notification experience"
+            android:textSize="15sp"
             android:textColor="@color/text_secondary"
             android:gravity="center"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="20dp" />
 
-        <!-- Status Card -->
         <androidx.cardview.widget.CardView
-            xmlns:app="http://schemas.android.com/apk/res-auto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:layout_marginBottom="16dp">
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp"
+            app:cardUseCompatPadding="true"
+            android:layout_marginBottom="14dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Status"
-                    android:textSize="16sp"
+                    android:text="Overlay Control"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="17sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Hands-Free Overlay"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary" />
+
+                    <Switch
+                        android:id="@+id/switch_master"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tv_master_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="4dp" />
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="8dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="10dp"
+                    android:background="@color/divider" />
 
                 <TextView
                     android:id="@+id/tv_status_nls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="15sp"
-                    android:layout_marginBottom="4dp" />
+                    android:layout_marginBottom="5dp" />
 
                 <TextView
                     android:id="@+id/tv_status_overlay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="15sp" />
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Permission buttons -->
         <Button
             android:id="@+id/btn_grant_nls"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="Grant Notification Access"
-            android:layout_marginBottom="12dp" />
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:layout_marginBottom="10dp" />
 
         <Button
             android:id="@+id/btn_grant_overlay"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="Grant Overlay Permission"
-            android:layout_marginBottom="24dp" />
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:layout_marginBottom="18dp" />
 
-        <!-- Settings -->
         <Button
             android:id="@+id/btn_settings"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:text="Open Settings" />
+            android:layout_height="54dp"
+            android:text="More Settings"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/text_on_primary" />
 
     </LinearLayout>
 </ScrollView>
