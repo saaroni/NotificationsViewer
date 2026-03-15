@@ -99,7 +99,7 @@ public class GlanceNotificationListenerService extends NotificationListenerServi
             // Trigger overlay if master is on, trigger-on-new is enabled, and not quiet hours
             if (masterOn && prefs.isTriggerOnNew() && !prefs.isQuietNow()) {
                 WakeUtil.acquireTemporary(this);
-                OverlayService.triggerOverlay(this);
+                OverlayService.triggerOverlayCard(this);
             }
 
         } catch (Exception e) {

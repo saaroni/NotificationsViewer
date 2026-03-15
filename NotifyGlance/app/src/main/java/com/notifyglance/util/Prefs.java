@@ -15,7 +15,7 @@ public class Prefs {
     public static final String KEY_TRIGGER_ON_NEW         = "pref_trigger_on_new";
     public static final String KEY_TIMED_SESSION          = "pref_timed_session";   // off / hourly / custom
     public static final String KEY_CUSTOM_INTERVAL        = "pref_custom_interval"; // minutes 5-60
-    public static final String KEY_MAX_CARDS              = "pref_max_cards";       // 3/5/10
+    public static final String KEY_MAX_CARDS              = "pref_max_cards";       // 5/10/50/unlimited
     public static final String KEY_CARD_DISPLAY_SECONDS   = "pref_card_display_sec";// 3/4.5/6/7
     public static final String KEY_QUIET_START            = "pref_quiet_start";     // "HH:mm"
     public static final String KEY_QUIET_END              = "pref_quiet_end";       // "HH:mm"
@@ -41,7 +41,10 @@ public class Prefs {
     public boolean isTriggerOnNew()       { return sp.getBoolean(KEY_TRIGGER_ON_NEW, true); }
     public String  getTimedSession()      { return sp.getString(KEY_TIMED_SESSION, TIMED_OFF); }
     public int     getCustomInterval()    { return parseInt(sp.getString(KEY_CUSTOM_INTERVAL, "15"), 15); }
-    public int     getMaxCards()          { return parseInt(sp.getString(KEY_MAX_CARDS, "5"), 5); }
+    public int     getMaxCards()          {
+        int value = parseInt(sp.getString(KEY_MAX_CARDS, "5"), 5);
+        return value <= 0 ? Integer.MAX_VALUE : value;
+    }
     public float   getCardDisplaySec()    { return parseFloat(sp.getString(KEY_CARD_DISPLAY_SECONDS, "5"), 5f); }
     public String  getQuietStart()        { return sp.getString(KEY_QUIET_START, ""); }
     public String  getQuietEnd()          { return sp.getString(KEY_QUIET_END, ""); }

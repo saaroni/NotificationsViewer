@@ -2,12 +2,16 @@ package com.notifyglance.overlay;
 
 import android.app.KeyguardManager;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,14 +42,14 @@ public class LockScreenActivity extends AppCompatActivity {
     private List<NotificationEntity> queue = new ArrayList<>();
     private int currentIndex = 0;
 
-    // Views
-    private TextView tvAppName, tvTitle, tvText, tvTime, tvIndex;
+    private TextView tvCountdown;
+    private ScrollView svNotifications;
+    private LinearLayout llNotifications;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ── Break through lock screen ──────────────────────────
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -56,10 +60,12 @@ public class LockScreenActivity extends AppCompatActivity {
                     public void onDismissError() {
                         Log.d(TAG, "Keyguard dismiss error - showing over lock screen anyway");
                     }
+
                     @Override
                     public void onDismissSucceeded() {
                         Log.d(TAG, "Keyguard dismissed");
                     }
+
                     @Override
                     public void onDismissCancelled() {
                         Log.d(TAG, "Keyguard dismiss cancelled - showing over lock screen anyway");
@@ -68,51 +74,48 @@ public class LockScreenActivity extends AppCompatActivity {
             }
         } else {
             getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                            | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                            | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                            | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
             );
         }
 
-        // Always add these window flags regardless of API level
         getWindow().addFlags(
-            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-            | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         );
 
         setContentView(R.layout.activity_lock_screen);
 
-        tvAppName = findViewById(R.id.tv_app_name);
-        tvTitle   = findViewById(R.id.tv_title);
-        tvText    = findViewById(R.id.tv_text);
-        tvTime    = findViewById(R.id.tv_time);
-        tvIndex   = findViewById(R.id.tv_index);
+        tvCountdown = findViewById(R.id.tv_countdown);
+        svNotifications = findViewById(R.id.sv_notifications);
+        llNotifications = findViewById(R.id.ll_notifications);
 
-        handler  = new Handler(Looper.getMainLooper());
+        View closeButton = findViewById(R.id.btn_close_overlay);
+        closeButton.setOnClickListener(v -> finishOverlay());
+
+        handler = new Handler(Looper.getMainLooper());
         executor = Executors.newSingleThreadExecutor();
-        prefs    = new Prefs(this);
+        prefs = new Prefs(this);
 
         loadAndShow();
     }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Log.d(TAG, "onNewIntent - restarting cycle");
-        if (advanceRunnable != null) {
-            handler.removeCallbacks(advanceRunnable);
-            advanceRunnable = null;
-        }
-        currentIndex = 0;
+        Log.d(TAG, "onNewIntent - restarting lock-screen list flow");
+        cancelAdvance();
         queue.clear();
+        currentIndex = 0;
         loadAndShow();
     }
-    
+
     private void loadAndShow() {
         executor.execute(() -> {
-             // Auto-cleanup notifications older than 7 days
             long sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
             AppDatabase.getInstance(this).notificationDao().deleteOlderThan(sevenDaysAgo);
 
@@ -130,87 +133,164 @@ public class LockScreenActivity extends AppCompatActivity {
                     : new ArrayList<>(unpresented);
 
             if (toShow.isEmpty()) {
-                Log.d(TAG, "No notifications - finishing");
-                runOnUiThread(this::finish);
+                Log.d(TAG, "No notifications - finishing lock-screen activity");
+                runOnUiThread(this::finishOverlay);
                 return;
             }
 
-            final List<NotificationEntity> finalList = toShow;
+            for (NotificationEntity item : toShow) {
+                AppDatabase.getInstance(this).notificationDao().markPresented(item.id);
+            }
+
+            List<NotificationEntity> finalList = new ArrayList<>(toShow);
             runOnUiThread(() -> {
                 queue = finalList;
                 currentIndex = 0;
-                prefs.setLastOverlayTime(System.currentTimeMillis()); 
-                showCurrentCard();
+                prefs.setLastOverlayTime(System.currentTimeMillis());
+                showCountdownThenList();
             });
         });
     }
 
-    private void showCurrentCard() {
-        if (currentIndex >= queue.size()) {
-            Log.d(TAG, "All cards shown, finishing");
-            WakeUtil.release();
-            finish();
+    private void showCountdownThenList() {
+        cancelAdvance();
+        svNotifications.setVisibility(View.GONE);
+        tvCountdown.setVisibility(View.VISIBLE);
+
+        final int[] remaining = {5};
+        advanceRunnable = new Runnable() {
+            @Override
+            public void run() {
+                tvCountdown.setText(String.valueOf(remaining[0]));
+                if (remaining[0] == 0) {
+                    showNotificationList();
+                    return;
+                }
+                remaining[0]--;
+                handler.postDelayed(this, 1000);
+            }
+        };
+        handler.post(advanceRunnable);
+    }
+
+    private void showNotificationList() {
+        tvCountdown.setVisibility(View.GONE);
+        svNotifications.setVisibility(View.VISIBLE);
+        llNotifications.removeAllViews();
+
+        for (NotificationEntity n : queue) {
+            View item = getLayoutInflater().inflate(R.layout.lock_screen_list_item, llNotifications, false);
+            bindListItem(item, n);
+            applyTheme(item);
+            llNotifications.addView(item);
+        }
+
+        svNotifications.scrollTo(0, 0);
+        svNotifications.post(this::scheduleAutoScroll);
+    }
+
+    private void bindListItem(View card, NotificationEntity n) {
+        TextView tvApp = card.findViewById(R.id.tv_app_name);
+        TextView tvTitle = card.findViewById(R.id.tv_title);
+        TextView tvText = card.findViewById(R.id.tv_text);
+        TextView tvTime = card.findViewById(R.id.tv_time);
+
+        tvApp.setText(n.appLabel != null ? n.appLabel : n.packageName);
+        tvTitle.setText(n.title != null ? n.title : "");
+        tvText.setText(n.text != null ? n.text : "");
+        tvTime.setText("Captured " + formatDateTime(n.capturedAt));
+
+        float sp = fontSizeSp();
+        tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
+        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 5);
+    }
+
+    private void scheduleAutoScroll() {
+        long delayMs = (long) (prefs.getCardDisplaySec() * 1000);
+        currentIndex = 0;
+
+        if (llNotifications.getChildCount() <= 1) {
+            handler.postDelayed(this::finishOverlay, delayMs);
             return;
         }
 
-        NotificationEntity n = queue.get(currentIndex);
-        bindCard(n);
+        advanceRunnable = new Runnable() {
+            @Override
+            public void run() {
+                currentIndex++;
+                if (currentIndex >= llNotifications.getChildCount()) {
+                    finishOverlay();
+                    return;
+                }
 
-        // Mark presented
-        final int idx = currentIndex;
-        executor.execute(() ->
-                AppDatabase.getInstance(this).notificationDao().markPresented(queue.get(idx).id));
-
-        // Auto advance
-        long delayMs = (long) (prefs.getCardDisplaySec() * 1000);
-        advanceRunnable = () -> {
-            currentIndex++;
-            showCurrentCard();
+                View next = llNotifications.getChildAt(currentIndex);
+                int targetY = next.getTop();
+                int maxY = Math.max(0, llNotifications.getHeight() - svNotifications.getHeight());
+                svNotifications.smoothScrollTo(0, Math.min(targetY, maxY));
+                handler.postDelayed(this, delayMs);
+            }
         };
+
         handler.postDelayed(advanceRunnable, delayMs);
     }
 
-    private void bindCard(NotificationEntity n) {
-        tvAppName.setText(n.appLabel != null ? n.appLabel : n.packageName);
-        tvTitle.setText(n.title != null ? n.title : "");
-        tvText.setText(n.text  != null ? n.text  : "");
-        tvTime.setText(new SimpleDateFormat("HH:mm", Locale.getDefault())
-                .format(new Date(n.postedAt)));
-        tvIndex.setText((currentIndex + 1) + " / " + queue.size());
+    private void applyTheme(View card) {
+        if (!prefs.isHighContrast()) return;
+        findViewById(android.R.id.content).setBackgroundColor(Color.BLACK);
+        ((TextView) findViewById(R.id.btn_close_overlay)).setTextColor(Color.WHITE);
+        ((TextView) findViewById(R.id.tv_header)).setTextColor(Color.WHITE);
+        setTextColor(card, Color.WHITE);
+    }
 
-        // Apply font size
-        float sp = fontSizeSp();
-        tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp);
-        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
-
-        // High contrast
-        if (prefs.isHighContrast()) {
-            findViewById(R.id.card_root).setBackgroundColor(android.graphics.Color.BLACK);
-            tvTitle.setTextColor(android.graphics.Color.WHITE);
-            tvText.setTextColor(android.graphics.Color.WHITE);
-            tvAppName.setTextColor(android.graphics.Color.WHITE);
-            tvTime.setTextColor(android.graphics.Color.WHITE);
-            tvIndex.setTextColor(android.graphics.Color.WHITE);
+    private void setTextColor(View root, int color) {
+        if (root instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                if (child instanceof TextView) ((TextView) child).setTextColor(color);
+                else setTextColor(child, color);
+            }
         }
+    }
+
+    private String formatDateTime(long ts) {
+        return new SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault()).format(new Date(ts));
     }
 
     private float fontSizeSp() {
         switch (prefs.getFontSize()) {
-            case "large": return 16f;
-            case "xxl":   return 24f;
-            default:      return 20f;
+            case "large":
+                return 16f;
+            case "xxl":
+                return 24f;
+            case "xl":
+            default:
+                return 20f;
         }
+    }
+
+    private void cancelAdvance() {
+        if (advanceRunnable != null) {
+            handler.removeCallbacks(advanceRunnable);
+            advanceRunnable = null;
+        }
+    }
+
+    private void finishOverlay() {
+        cancelAdvance();
+        WakeUtil.release();
+        finish();
     }
 
     @Override
     protected void onDestroy() {
-        if (advanceRunnable != null) handler.removeCallbacks(advanceRunnable);
+        cancelAdvance();
         if (executor != null) executor.shutdown();
         super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
-        // Prevent user dismissing with back button - hands free only
+        // Keep lock-screen behavior hands-free unless user taps close button.
     }
 }

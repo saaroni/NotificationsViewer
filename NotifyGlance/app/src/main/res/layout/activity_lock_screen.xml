@@ -1,93 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#CC000000">
+    android:orientation="vertical"
+    android:background="@color/background"
+    android:padding="12dp">
 
-    <androidx.cardview.widget.CardView
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/card_root"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
-        android:layout_margin="16dp"
-        android:layout_marginTop="60dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/card_background">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/tv_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Recent Notifications"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/btn_close_overlay"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:contentDescription="Close overlay" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_countdown"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="5"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:textSize="64sp" />
+
+    <ScrollView
+        android:id="@+id/sv_notifications"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone">
 
         <LinearLayout
+            android:id="@+id/ll_notifications"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical" />
+    </ScrollView>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tv_app_name"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textSize="12sp"
-                    android:textColor="@color/accent"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/tv_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginStart="8dp" />
-
-                <TextView
-                    android:id="@+id/tv_index"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_badge"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp" />
-
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:layout_marginVertical="8dp" />
-
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:maxLines="2"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/tv_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginTop="4dp"
-                android:maxLines="4"
-                android:ellipsize="end" />
-
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-</FrameLayout>
+</LinearLayout>
