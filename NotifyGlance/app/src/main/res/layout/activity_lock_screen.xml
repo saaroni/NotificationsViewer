@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -17,6 +15,7 @@
         android:paddingBottom="8dp">
 
         <TextView
+            android:id="@+id/tv_header"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -37,79 +36,32 @@
             android:contentDescription="Close overlay" />
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_root"
+    <TextView
+        android:id="@+id/tv_countdown"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="3dp"
-        app:cardUseCompatPadding="true"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/divider">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="5"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:textSize="64sp" />
+
+    <ScrollView
+        android:id="@+id/sv_notifications"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone">
 
         <LinearLayout
+            android:id="@+id/ll_notifications"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tv_app_name"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:textSize="13sp"
-                    android:textColor="@color/accent"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/tv_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_secondary" />
-
-                <TextView
-                    android:id="@+id/tv_index"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_secondary"
-                    android:background="@drawable/bg_badge"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:maxLines="2"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/tv_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"
-                android:maxLines="3"
-                android:ellipsize="end" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
+            android:orientation="vertical" />
+    </ScrollView>
 
 </LinearLayout>
