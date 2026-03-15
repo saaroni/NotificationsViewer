@@ -50,6 +50,7 @@ public class OverlayService extends Service {
     public static final String ACTION_TRIGGER_CARD = "com.notifyglance.TRIGGER_OVERLAY_CARD";
     public static final String ACTION_STOP = "com.notifyglance.STOP_OVERLAY";
     public static final String ACTION_TEST = "com.notifyglance.TEST_OVERLAY";
+    public static final String EXTRA_SKIP_LOCK_COUNTDOWN = "com.notifyglance.EXTRA_SKIP_LOCK_COUNTDOWN";
 
     private WindowManager windowManager;
     private View overlayView;
@@ -118,7 +119,7 @@ public class OverlayService extends Service {
                 break;
             case ACTION_TRIGGER_CARD:
                 if (isDeviceLocked()) {
-                    launchLockScreenFlow();
+                    launchLockScreenFlow(true);
                 } else {
                     loadQueueAndShow(true);
                 }
@@ -126,7 +127,7 @@ public class OverlayService extends Service {
             case ACTION_TRIGGER:
             default:
                 if (isDeviceLocked()) {
-                    launchLockScreenFlow();
+                    launchLockScreenFlow(false);
                 } else {
                     loadQueueAndShow(false);
                 }
@@ -140,17 +141,18 @@ public class OverlayService extends Service {
         return km != null && km.isKeyguardLocked();
     }
 
-    private void launchLockScreenFlow() {
+    private void launchLockScreenFlow(boolean skipCountdown) {
         Log.d(TAG, "Device locked - attempting lock-screen activity launch flow");
-        if (tryLaunchLockScreenActivity()) {
+        if (tryLaunchLockScreenActivity(skipCountdown)) {
             return;
         }
         Log.d(TAG, "Direct launch unavailable - using full-screen notification fallback");
-        postLockScreenFullScreenNotification();
+        postLockScreenFullScreenNotification(skipCountdown);
     }
 
-    private boolean tryLaunchLockScreenActivity() {
+    private boolean tryLaunchLockScreenActivity(boolean skipCountdown) {
         Intent lockIntent = new Intent(this, LockScreenActivity.class);
+        lockIntent.putExtra(EXTRA_SKIP_LOCK_COUNTDOWN, skipCountdown);
         lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -166,8 +168,9 @@ public class OverlayService extends Service {
         }
     }
 
-    private void postLockScreenFullScreenNotification() {
+    private void postLockScreenFullScreenNotification(boolean skipCountdown) {
         Intent lockIntent = new Intent(this, LockScreenActivity.class);
+        lockIntent.putExtra(EXTRA_SKIP_LOCK_COUNTDOWN, skipCountdown);
         lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -251,7 +254,7 @@ public class OverlayService extends Service {
         View countdownView = inflater.inflate(R.layout.overlay_countdown, null);
         TextView tvCountdown = countdownView.findViewById(R.id.tv_countdown);
 
-        WindowManager.LayoutParams params = buildOverlayLayoutParams();
+        WindowManager.LayoutParams params = buildOverlayLayoutParams(false);
         overlayView = countdownView;
         windowManager.addView(overlayView, params);
         overlayShowing = true;
@@ -301,7 +304,7 @@ public class OverlayService extends Service {
         }
 
         overlayView = panel;
-        windowManager.addView(overlayView, buildOverlayLayoutParams());
+        windowManager.addView(overlayView, buildOverlayLayoutParams(false));
         overlayShowing = true;
         prefs.setLastOverlayTime(System.currentTimeMillis());
         acquireWakeLock();
@@ -340,7 +343,7 @@ public class OverlayService extends Service {
         closeButton.setOnClickListener(v -> hideOverlay());
 
         overlayView = card;
-        windowManager.addView(overlayView, buildOverlayLayoutParams());
+        windowManager.addView(overlayView, buildOverlayLayoutParams(true));
         overlayShowing = true;
         prefs.setLastOverlayTime(System.currentTimeMillis());
         acquireWakeLock();
@@ -371,9 +374,14 @@ public class OverlayService extends Service {
         tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
     }
 
-    private WindowManager.LayoutParams buildOverlayLayoutParams() {
-        int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        int overlayHeight = (int) (screenHeight * 0.75f);
+    private WindowManager.LayoutParams buildOverlayLayoutParams(boolean cardMode) {
+        int overlayHeight;
+        if (cardMode) {
+            overlayHeight = WindowManager.LayoutParams.WRAP_CONTENT;
+        } else {
+            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            overlayHeight = (int) (screenHeight * 0.75f);
+        }
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
