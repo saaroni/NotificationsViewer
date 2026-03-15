@@ -129,7 +129,7 @@ public class OverlayService extends Service {
                 if (isDeviceLocked()) {
                     launchLockScreenFlow(false);
                 } else {
-                    loadQueueAndShow(true);
+                    loadQueueAndShow(false);
                 }
                 break;
         }
