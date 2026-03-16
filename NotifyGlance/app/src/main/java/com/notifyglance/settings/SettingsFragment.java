@@ -54,6 +54,10 @@ public class SettingsFragment extends PreferenceFragmentCompat
         String key = preference.getKey();
 
         if (Prefs.KEY_TIMED_SESSION.equals(key)) {
+            String mode = (String) newValue;
+            androidx.preference.PreferenceManager
+                    .getDefaultSharedPreferences(requireContext())
+                    .edit().putString(key, mode).apply();
             com.notifyglance.util.AlarmScheduler.schedule(requireContext());
             return true;
         }
