@@ -23,6 +23,7 @@ public class Prefs {
     public static final String KEY_FONT_SIZE              = "pref_font_size";       // large/xl/xxl
     public static final String KEY_HIGH_CONTRAST          = "pref_high_contrast";
     public static final String KEY_LAST_OVERLAY_TIME      = "pref_last_overlay_time";
+    public static final String KEY_NEXT_OVERLAY_TIME      = "pref_next_overlay_time";
     public static final String KEY_CAPTURE_WHILE_OFF      = "pref_capture_while_off";
     public static final String KEY_OVERLAY_LOOKBACK_MIN   = "pref_overlay_lookback_minutes";
 
@@ -68,6 +69,7 @@ public class Prefs {
     public String  getFontSize()          { return sp.getString(KEY_FONT_SIZE, "xl"); }
     public boolean isHighContrast()       { return sp.getBoolean(KEY_HIGH_CONTRAST, false); }
     public long    getLastOverlayTime()   { return sp.getLong(KEY_LAST_OVERLAY_TIME, 0); }
+    public long    getNextOverlayTime()   { return sp.getLong(KEY_NEXT_OVERLAY_TIME, 0); }
     public boolean isCaptureWhileOff()    { return sp.getBoolean(KEY_CAPTURE_WHILE_OFF, true); }
     public int getOverlayLookbackMinutes() {
         int mins = parseInt(sp.getString(KEY_OVERLAY_LOOKBACK_MIN, "60"), 60);
@@ -78,6 +80,10 @@ public class Prefs {
 
     public void setLastOverlayTime(long ts) {
         sp.edit().putLong(KEY_LAST_OVERLAY_TIME, ts).apply();
+    }
+
+    public void setNextOverlayTime(long ts) {
+        sp.edit().putLong(KEY_NEXT_OVERLAY_TIME, ts).apply();
     }
 
     /** Returns true if current time falls in quiet hours */
