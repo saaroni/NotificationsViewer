@@ -115,7 +115,12 @@ public class OverlayService extends Service {
                 stopSelf();
                 break;
             case ACTION_TEST:
-                showTestCard();
+                try {
+                    showTestCard();
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to show test overlay", e);
+                    stopSelf();
+                }
                 break;
             case ACTION_TRIGGER_CARD:
                 if (isDeviceLocked()) {
@@ -256,7 +261,10 @@ public class OverlayService extends Service {
 
         WindowManager.LayoutParams params = buildOverlayLayoutParams(false);
         overlayView = countdownView;
-        windowManager.addView(overlayView, params);
+        if (!safeAddOverlayView(overlayView, params)) {
+            overlayView = null;
+            return;
+        }
         overlayShowing = true;
         acquireWakeLock();
 
@@ -304,7 +312,10 @@ public class OverlayService extends Service {
         }
 
         overlayView = panel;
-        windowManager.addView(overlayView, buildOverlayLayoutParams(false));
+        if (!safeAddOverlayView(overlayView, buildOverlayLayoutParams(false))) {
+            overlayView = null;
+            return;
+        }
         overlayShowing = true;
         prefs.setLastOverlayTime(System.currentTimeMillis());
         acquireWakeLock();
@@ -343,7 +354,10 @@ public class OverlayService extends Service {
         closeButton.setOnClickListener(v -> hideOverlay());
 
         overlayView = card;
-        windowManager.addView(overlayView, buildOverlayLayoutParams(true));
+        if (!safeAddOverlayView(overlayView, buildOverlayLayoutParams(true))) {
+            overlayView = null;
+            return;
+        }
         overlayShowing = true;
         prefs.setLastOverlayTime(System.currentTimeMillis());
         acquireWakeLock();
@@ -487,6 +501,20 @@ public class OverlayService extends Service {
         list.add(newest);
         list.add(demo);
         handler.post(() -> showCountdownThenList(list));
+    }
+
+    private boolean safeAddOverlayView(View view, WindowManager.LayoutParams params) {
+        if (windowManager == null) {
+            Log.e(TAG, "WindowManager unavailable; cannot show overlay");
+            return false;
+        }
+        try {
+            windowManager.addView(view, params);
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to add overlay view", e);
+            return false;
+        }
     }
 
     private void hideOverlay() {
