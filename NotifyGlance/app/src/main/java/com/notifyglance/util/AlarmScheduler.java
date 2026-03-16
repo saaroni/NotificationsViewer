@@ -28,20 +28,17 @@ public class AlarmScheduler {
             return;
         }
 
-        long intervalMs;
-        if (Prefs.TIMED_HOURLY.equals(mode)) {
-            intervalMs = 60 * 60 * 1000L;
-        } else {
-            int minutes = prefs.getCustomInterval();
-            if (minutes < 1)  minutes = 1;
-            if (minutes > 60) minutes = 60;
-            intervalMs = minutes * 60 * 1000L;
+        int intervalMinutes = prefs.getTimedSessionIntervalMinutes();
+        if (intervalMinutes <= 0) {
+            cancel(context);
+            return;
         }
+
 
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         PendingIntent pi = getPendingIntent(context);
 
-        long triggerAt = System.currentTimeMillis() + intervalMs;
+        long triggerAt = computeNextAlignedTriggerAt(intervalMinutes);
 
         // setExactAndAllowWhileIdle fires even during Doze mode
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -50,12 +47,28 @@ public class AlarmScheduler {
             am.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pi);
         }
 
-        Log.d(TAG, "Alarm scheduled in " + (intervalMs / 1000 / 60) + " minutes");
+        prefs.setNextOverlayTime(triggerAt);
+        Log.d(TAG, "Alarm scheduled at " + new java.util.Date(triggerAt) + " (every " + intervalMinutes + " minutes)");
+    }
+
+
+    private static long computeNextAlignedTriggerAt(int intervalMinutes) {
+        long now = System.currentTimeMillis();
+        long intervalMs = intervalMinutes * 60L * 1000L;
+        long currentBucket = now / intervalMs;
+        return (currentBucket + 1) * intervalMs;
+    }
+
+    public static long getNextScheduledTriggerAtMillis(Context context) {
+        long nextScheduled = new Prefs(context).getNextOverlayTime();
+        return nextScheduled > 0 ? nextScheduled : -1;
     }
 
     public static void cancel(Context context) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         am.cancel(getPendingIntent(context));
+
+        new Prefs(context).setNextOverlayTime(0);
         Log.d(TAG, "Alarm cancelled");
     }
 

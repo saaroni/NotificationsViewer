@@ -19,14 +19,6 @@
             android:entryValues="@array/timed_session_values"
             android:defaultValue="off" />
 
-        <EditTextPreference
-            android:key="pref_custom_interval"
-            android:title="Custom Interval (minutes)"
-            android:summary="Enter a value between 5 and 60"
-            android:defaultValue="15"
-            android:inputType="number"
-            android:visible="false" />
-
     </PreferenceCategory>
 
     <!-- ── Session Length ────────────────────────────────── -->

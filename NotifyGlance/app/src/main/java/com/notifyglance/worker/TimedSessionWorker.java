@@ -56,13 +56,11 @@ public class TimedSessionWorker extends Worker {
             return;
         }
 
-        long intervalMinutes;
-        if (Prefs.TIMED_HOURLY.equals(mode)) {
-            intervalMinutes = 60;
-        } else {
-            intervalMinutes = prefs.getCustomInterval();
-            if (intervalMinutes < 5)  intervalMinutes = 5;
-            if (intervalMinutes > 60) intervalMinutes = 60;
+        long intervalMinutes = prefs.getTimedSessionIntervalMinutes();
+        if (intervalMinutes <= 0) {
+            wm.cancelUniqueWork(WORK_NAME);
+            Log.d(TAG, "Timed sessions disabled due to invalid interval");
+            return;
         }
 
         PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
