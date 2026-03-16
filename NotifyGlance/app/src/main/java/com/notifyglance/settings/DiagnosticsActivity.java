@@ -69,7 +69,7 @@ public class DiagnosticsActivity extends AppCompatActivity {
 
         executor.execute(() -> {
             int total = AppDatabase.getInstance(this).notificationDao().countAll();
-            int unpresented = AppDatabase.getInstance(this).notificationDao().getUnpresented().size();
+            int unpresented = AppDatabase.getInstance(this).notificationDao().countUnpresented();
             runOnUiThread(() -> tvNotifCount.setText(
                 "Stored notifications: " + total + "\n" +
                 "Unread (not yet shown): " + unpresented
@@ -79,8 +79,7 @@ public class DiagnosticsActivity extends AppCompatActivity {
 
     private void clearDatabase() {
         executor.execute(() -> {
-            AppDatabase.getInstance(this).notificationDao()
-                    .deleteOlderThan(System.currentTimeMillis() + 1); // delete all
+            AppDatabase.getInstance(this).notificationDao().clearAll();
             runOnUiThread(() -> {
                 android.widget.Toast.makeText(this, "Database cleared", android.widget.Toast.LENGTH_SHORT).show();
                 loadStats();

@@ -31,30 +31,21 @@ public interface NotificationDao {
     @Query("SELECT * FROM notifications WHERE capturedAt >= :threshold ORDER BY postedAt DESC")
     List<NotificationEntity> getAllForCycleSince(long threshold);
 
-
-    /** Legacy unpresented query (used by lock-screen and diagnostics) */
-    @Query("SELECT * FROM notifications WHERE presented = 0 ORDER BY postedAt ASC")
-    List<NotificationEntity> getUnpresented();
-
-    /** Legacy cycle query (used by lock-screen flow) */
-    @Query("SELECT * FROM notifications ORDER BY postedAt ASC")
-    List<NotificationEntity> getAllForCycle();
-
     /** Mark lookback-window items as presented = 0 so the cycle can restart */
     @Query("UPDATE notifications SET presented = 0 WHERE capturedAt >= :threshold")
     void resetPresentedSince(long threshold);
-
-    /** Mark all as presented = 0 so the cycle can restart */
-    @Query("UPDATE notifications SET presented = 0")
-    void resetAllPresented();
 
     /** Mark single item presented */
     @Query("UPDATE notifications SET presented = 1 WHERE id = :id")
     void markPresented(long id);
 
-    /** Delete notifications older than given timestamp */
-    @Query("DELETE FROM notifications WHERE postedAt < :threshold")
-    void deleteOlderThan(long threshold);
+    /** Count unpresented */
+    @Query("SELECT COUNT(*) FROM notifications WHERE presented = 0")
+    int countUnpresented();
+
+    /** Clear all notifications */
+    @Query("DELETE FROM notifications")
+    void clearAll();
 
     /** Count total */
     @Query("SELECT COUNT(*) FROM notifications")
