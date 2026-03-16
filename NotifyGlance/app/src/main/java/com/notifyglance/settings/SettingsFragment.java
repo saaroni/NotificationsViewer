@@ -22,7 +22,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
         implements Preference.OnPreferenceChangeListener {
 
     private ListPreference timedSession;
-    private EditTextPreference customInterval;
     private EditTextPreference overlayLookback;
 
     @Override
@@ -30,15 +29,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         timedSession    = findPreference(Prefs.KEY_TIMED_SESSION);
-        customInterval  = findPreference(Prefs.KEY_CUSTOM_INTERVAL);
         overlayLookback = findPreference(Prefs.KEY_OVERLAY_LOOKBACK_MIN);
 
         if (timedSession != null) timedSession.setOnPreferenceChangeListener(this);
-        if (customInterval != null) {
-            customInterval.setOnPreferenceChangeListener(this);
-            customInterval.setOnBindEditTextListener(et ->
-                    et.setInputType(InputType.TYPE_CLASS_NUMBER));
-        }
         if (overlayLookback != null) {
             overlayLookback.setOnPreferenceChangeListener(this);
             overlayLookback.setOnBindEditTextListener(et ->
@@ -46,8 +39,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
         }
 
         populateAppFilter();
-        updateCustomIntervalVisibility(
-                timedSession != null ? timedSession.getValue() : Prefs.TIMED_OFF);
 
         Preference diagPref = findPreference("pref_diagnostics_screen");
         if (diagPref != null) {
@@ -63,30 +54,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
         String key = preference.getKey();
 
         if (Prefs.KEY_TIMED_SESSION.equals(key)) {
-            String mode = (String) newValue;
-            updateCustomIntervalVisibility(mode);
-            androidx.preference.PreferenceManager
-                    .getDefaultSharedPreferences(requireContext())
-                    .edit().putString(key, mode).apply();
-            com.notifyglance.util.AlarmScheduler.schedule(requireContext());
-            return true;
-        }
-
-        if (Prefs.KEY_CUSTOM_INTERVAL.equals(key)) {
-            String val = (String) newValue;
-            try {
-                int minutes = Integer.parseInt(val);
-                if (minutes < 1 || minutes > 60) {
-                    showToast("Interval must be between 1 and 60 minutes");
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                showToast("Please enter a valid number");
-                return false;
-            }
-            androidx.preference.PreferenceManager
-                    .getDefaultSharedPreferences(requireContext())
-                    .edit().putString(key, val).apply();
             com.notifyglance.util.AlarmScheduler.schedule(requireContext());
             return true;
         }
@@ -109,11 +76,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
         return true;
     }
 
-    private void updateCustomIntervalVisibility(String mode) {
-        if (customInterval != null) {
-            customInterval.setVisible(Prefs.TIMED_CUSTOM.equals(mode));
-        }
-    }
 
     private void populateAppFilter() {
         MultiSelectListPreference appFilter = findPreference(Prefs.KEY_ALLOWED_APPS);

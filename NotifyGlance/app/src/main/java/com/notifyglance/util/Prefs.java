@@ -13,8 +13,7 @@ public class Prefs {
     // Keys (must match preference XML)
     public static final String KEY_MASTER_TOGGLE          = "pref_master_toggle";
     public static final String KEY_TRIGGER_ON_NEW         = "pref_trigger_on_new";
-    public static final String KEY_TIMED_SESSION          = "pref_timed_session";   // off / hourly / custom
-    public static final String KEY_CUSTOM_INTERVAL        = "pref_custom_interval"; // minutes 5-60
+    public static final String KEY_TIMED_SESSION          = "pref_timed_session";   // off / interval minutes
     public static final String KEY_MAX_CARDS              = "pref_max_cards";       // 5/10/50/unlimited
     public static final String KEY_CARD_DISPLAY_SECONDS   = "pref_card_display_sec";// 3/4.5/6/7
     public static final String KEY_QUIET_START            = "pref_quiet_start";     // "HH:mm"
@@ -28,8 +27,6 @@ public class Prefs {
     public static final String KEY_OVERLAY_LOOKBACK_MIN   = "pref_overlay_lookback_minutes";
 
     public static final String TIMED_OFF     = "off";
-    public static final String TIMED_HOURLY  = "hourly";
-    public static final String TIMED_CUSTOM  = "custom";
 
     private final SharedPreferences sp;
 
@@ -40,7 +37,25 @@ public class Prefs {
     public boolean isMasterOn()           { return sp.getBoolean(KEY_MASTER_TOGGLE, false); }
     public boolean isTriggerOnNew()       { return sp.getBoolean(KEY_TRIGGER_ON_NEW, true); }
     public String  getTimedSession()      { return sp.getString(KEY_TIMED_SESSION, TIMED_OFF); }
-    public int     getCustomInterval()    { return parseInt(sp.getString(KEY_CUSTOM_INTERVAL, "15"), 15); }
+
+    public int getTimedSessionIntervalMinutes() {
+        String mode = getTimedSession();
+        if (TIMED_OFF.equals(mode)) return 0;
+
+        int minutes = parseInt(mode, 0);
+        switch (minutes) {
+            case 1:
+            case 5:
+            case 10:
+            case 15:
+            case 20:
+            case 30:
+            case 60:
+                return minutes;
+            default:
+                return 0;
+        }
+    }
     public int     getMaxCards()          {
         int value = parseInt(sp.getString(KEY_MAX_CARDS, "5"), 5);
         return value <= 0 ? Integer.MAX_VALUE : value;
