@@ -58,6 +58,17 @@ public class AlarmScheduler {
         return (currentBucket + 1) * intervalMs;
     }
 
+    public static long getNextScheduledTriggerAtMillis(Context context) {
+        Prefs prefs = new Prefs(context);
+        if (!prefs.isMasterOn()) return -1;
+        if (Prefs.TIMED_OFF.equals(prefs.getTimedSession())) return -1;
+
+        int intervalMinutes = prefs.getTimedSessionIntervalMinutes();
+        if (intervalMinutes <= 0) return -1;
+
+        return computeNextAlignedTriggerAt(intervalMinutes);
+    }
+
     public static void cancel(Context context) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         am.cancel(getPendingIntent(context));

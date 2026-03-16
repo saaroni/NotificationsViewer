@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.notifyglance.R;
 import com.notifyglance.db.AppDatabase;
 import com.notifyglance.overlay.OverlayService;
+import com.notifyglance.util.AlarmScheduler;
 import com.notifyglance.util.Prefs;
 
 import java.text.SimpleDateFormat;
@@ -62,10 +63,16 @@ public class DiagnosticsActivity extends AppCompatActivity {
                 + "\nTimed Mode: " + prefs.getTimedSession()
                 + "\nQuiet Now: " + prefs.isQuietNow());
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault());
+
         long last = prefs.getLastOverlayTime();
-        tvLastOverlay.setText("Last overlay: " + (last == 0 ? "Never"
-                : new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault())
-                .format(new Date(last))));
+        String lastOverlayText = last == 0 ? "Never" : dateFormat.format(new Date(last));
+
+        long nextScheduled = AlarmScheduler.getNextScheduledTriggerAtMillis(this);
+        String nextOverlayText = nextScheduled <= 0 ? "Not scheduled" : dateFormat.format(new Date(nextScheduled));
+
+        tvLastOverlay.setText("Last overlay: " + lastOverlayText
+                + "\nNext scheduled overlay: " + nextOverlayText);
 
         executor.execute(() -> {
             int total = AppDatabase.getInstance(this).notificationDao().countAll();
