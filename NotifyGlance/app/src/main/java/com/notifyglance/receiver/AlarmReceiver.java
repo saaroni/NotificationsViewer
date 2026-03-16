@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.notifyglance.db.AppDatabase;
 import com.notifyglance.overlay.OverlayService;
 import com.notifyglance.util.AlarmScheduler;
 import com.notifyglance.util.Prefs;
@@ -34,8 +35,30 @@ public class AlarmReceiver extends BroadcastReceiver {
         Log.d(TAG, "Master on: " + prefs.isMasterOn());
         Log.d(TAG, "Quiet now: " + prefs.isQuietNow());
 
-        if (!prefs.isMasterOn()) return;
-        if (prefs.isQuietNow())  return;
+        if (!prefs.isMasterOn()) {
+            AlarmScheduler.schedule(context);
+            return;
+        }
+        if (prefs.isQuietNow()) {
+            AlarmScheduler.schedule(context);
+            return;
+        }
+
+        long lookbackThreshold = System.currentTimeMillis()
+                - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
+        int pendingCount = AppDatabase.getInstance(context)
+                .notificationDao()
+                .countUnpresentedSince(lookbackThreshold);
+        int totalCount = AppDatabase.getInstance(context)
+                .notificationDao()
+                .countAllSince(lookbackThreshold);
+        Log.d(TAG, "Notifications in lookback: pending=" + pendingCount + ", total=" + totalCount);
+
+        if (pendingCount <= 0 && totalCount <= 0) {
+            Log.d(TAG, "No notifications available, skipping wake/overlay trigger");
+            AlarmScheduler.schedule(context);
+            return;
+        }
 
         // Acquire wake lock
         WakeUtil.acquireTemporary(context);

@@ -43,6 +43,14 @@ public interface NotificationDao {
     @Query("SELECT COUNT(*) FROM notifications WHERE presented = 0")
     int countUnpresented();
 
+    /** Count unpresented within lookback window */
+    @Query("SELECT COUNT(*) FROM notifications WHERE presented = 0 AND capturedAt >= :threshold")
+    int countUnpresentedSince(long threshold);
+
+    /** Count all within lookback window */
+    @Query("SELECT COUNT(*) FROM notifications WHERE capturedAt >= :threshold")
+    int countAllSince(long threshold);
+
     /** Clear all notifications */
     @Query("DELETE FROM notifications")
     void clearAll();
