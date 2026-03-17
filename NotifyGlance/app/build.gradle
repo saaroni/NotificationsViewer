@@ -63,9 +63,6 @@ dependencies {
     implementation 'androidx.room:room-runtime:2.6.1'
     annotationProcessor 'androidx.room:room-compiler:2.6.1'
 
-    // WorkManager
-    implementation 'androidx.work:work-runtime:2.9.0'
-
     // Lifecycle
     implementation 'androidx.lifecycle:lifecycle-service:2.7.0'
     implementation 'androidx.lifecycle:lifecycle-runtime:2.7.0'
