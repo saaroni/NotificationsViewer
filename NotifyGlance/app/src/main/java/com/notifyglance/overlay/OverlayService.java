@@ -419,7 +419,7 @@ public class OverlayService extends Service {
         tvApp.setText(n.appLabel != null ? n.appLabel : n.packageName);
         tvTitle.setText(n.title != null ? n.title : "");
         tvText.setText(n.text != null ? n.text : "");
-        tvTime.setText("Captured " + formatDateTime(n.capturedAt));
+        tvTime.setText(formatDateTime(n.capturedAt));
 
         float sp = fontSizeSp();
         tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
