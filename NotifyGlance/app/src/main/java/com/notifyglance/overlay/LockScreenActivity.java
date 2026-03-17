@@ -120,8 +120,10 @@ public class LockScreenActivity extends AppCompatActivity {
             long lookbackThreshold = System.currentTimeMillis()
                     - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
 
-            List<NotificationEntity> allWithinLookback =
-                    AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
+            boolean cardMode = isCardMode();
+            List<NotificationEntity> allWithinLookback = cardMode
+                    ? AppDatabase.getInstance(this).notificationDao().getUnpresentedForCycleSince(lookbackThreshold)
+                    : AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
 
             int max = prefs.getMaxCards();
             List<NotificationEntity> toShow = allWithinLookback.size() > max
@@ -143,7 +145,7 @@ public class LockScreenActivity extends AppCompatActivity {
                 queue = finalList;
                 currentIndex = 0;
                 prefs.setLastOverlayTime(System.currentTimeMillis());
-                if (shouldSkipCountdown()) {
+                if (cardMode) {
                     showNotificationList();
                 } else {
                     showCountdownThenList();
@@ -153,10 +155,10 @@ public class LockScreenActivity extends AppCompatActivity {
     }
 
 
-    private boolean shouldSkipCountdown() {
+    private boolean isCardMode() {
         Intent intent = getIntent();
         return intent != null
-                && intent.getBooleanExtra(OverlayService.EXTRA_SKIP_LOCK_COUNTDOWN, false);
+                && intent.getBooleanExtra(OverlayService.EXTRA_CARD_MODE, false);
     }
 
     private void showCountdownThenList() {

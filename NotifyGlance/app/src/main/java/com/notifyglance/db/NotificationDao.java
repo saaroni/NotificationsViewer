@@ -19,6 +19,10 @@ public interface NotificationDao {
     @Query("SELECT * FROM notifications WHERE capturedAt >= :threshold ORDER BY postedAt DESC")
     List<NotificationEntity> getAllForCycleSince(long threshold);
 
+    /** Unpresented items within lookback window (for card mode) */
+    @Query("SELECT * FROM notifications WHERE presented = 0 AND capturedAt >= :threshold ORDER BY postedAt DESC")
+    List<NotificationEntity> getUnpresentedForCycleSince(long threshold);
+
     /** Mark single item presented */
     @Query("UPDATE notifications SET presented = 1 WHERE id = :id")
     void markPresented(long id);

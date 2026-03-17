@@ -50,7 +50,7 @@ public class OverlayService extends Service {
     public static final String ACTION_TRIGGER_CARD = "com.notifyglance.TRIGGER_OVERLAY_CARD";
     public static final String ACTION_STOP = "com.notifyglance.STOP_OVERLAY";
     public static final String ACTION_TEST = "com.notifyglance.TEST_OVERLAY";
-    public static final String EXTRA_SKIP_LOCK_COUNTDOWN = "com.notifyglance.EXTRA_SKIP_LOCK_COUNTDOWN";
+    public static final String EXTRA_CARD_MODE = "com.notifyglance.EXTRA_CARD_MODE";
 
     private WindowManager windowManager;
     private View overlayView;
@@ -146,18 +146,18 @@ public class OverlayService extends Service {
         return km != null && km.isKeyguardLocked();
     }
 
-    private void launchLockScreenFlow(boolean skipCountdown) {
+    private void launchLockScreenFlow(boolean cardMode) {
         Log.d(TAG, "Device locked - attempting lock-screen activity launch flow");
-        if (tryLaunchLockScreenActivity(skipCountdown)) {
+        if (tryLaunchLockScreenActivity(cardMode)) {
             return;
         }
         Log.d(TAG, "Direct launch unavailable - using full-screen notification fallback");
-        postLockScreenFullScreenNotification(skipCountdown);
+        postLockScreenFullScreenNotification(cardMode);
     }
 
-    private boolean tryLaunchLockScreenActivity(boolean skipCountdown) {
+    private boolean tryLaunchLockScreenActivity(boolean cardMode) {
         Intent lockIntent = new Intent(this, LockScreenActivity.class);
-        lockIntent.putExtra(EXTRA_SKIP_LOCK_COUNTDOWN, skipCountdown);
+        lockIntent.putExtra(EXTRA_CARD_MODE, cardMode);
         lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -173,9 +173,9 @@ public class OverlayService extends Service {
         }
     }
 
-    private void postLockScreenFullScreenNotification(boolean skipCountdown) {
+    private void postLockScreenFullScreenNotification(boolean cardMode) {
         Intent lockIntent = new Intent(this, LockScreenActivity.class);
-        lockIntent.putExtra(EXTRA_SKIP_LOCK_COUNTDOWN, skipCountdown);
+        lockIntent.putExtra(EXTRA_CARD_MODE, cardMode);
         lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -213,8 +213,9 @@ public class OverlayService extends Service {
             long lookbackThreshold = System.currentTimeMillis()
                     - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
 
-            List<NotificationEntity> allWithinLookback =
-                    AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
+            List<NotificationEntity> allWithinLookback = cardMode
+                    ? AppDatabase.getInstance(this).notificationDao().getUnpresentedForCycleSince(lookbackThreshold)
+                    : AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
 
             int max = prefs.getMaxCards();
             List<NotificationEntity> toShow = allWithinLookback.size() > max
