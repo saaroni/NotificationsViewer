@@ -120,18 +120,13 @@ public class LockScreenActivity extends AppCompatActivity {
             long lookbackThreshold = System.currentTimeMillis()
                     - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
 
-            List<NotificationEntity> unpresented =
-                    AppDatabase.getInstance(this).notificationDao().getUnpresentedSince(lookbackThreshold);
-
-            if (unpresented.isEmpty()) {
-                AppDatabase.getInstance(this).notificationDao().resetPresentedSince(lookbackThreshold);
-                unpresented = AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
-            }
+            List<NotificationEntity> allWithinLookback =
+                    AppDatabase.getInstance(this).notificationDao().getAllForCycleSince(lookbackThreshold);
 
             int max = prefs.getMaxCards();
-            List<NotificationEntity> toShow = unpresented.size() > max
-                    ? unpresented.subList(0, max)
-                    : new ArrayList<>(unpresented);
+            List<NotificationEntity> toShow = allWithinLookback.size() > max
+                    ? allWithinLookback.subList(0, max)
+                    : new ArrayList<>(allWithinLookback);
 
             if (toShow.isEmpty()) {
                 Log.d(TAG, "No notifications - finishing lock-screen activity");
