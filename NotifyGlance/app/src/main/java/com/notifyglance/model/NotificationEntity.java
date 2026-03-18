@@ -2,14 +2,19 @@ package com.notifyglance.model;
 
 import androidx.room.Entity;
 import androidx.room.Ignore;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "notifications")
+@Entity(
+        tableName = "notifications",
+        indices = {@Index(value = {"notificationKey"}, unique = true)}
+)
 public class NotificationEntity {
 
     @PrimaryKey(autoGenerate = true)
     public long id;
 
+    public String notificationKey;
     public String packageName;
     public String appLabel;
     public String title;
@@ -24,10 +29,11 @@ public class NotificationEntity {
     public NotificationEntity() {}
 
     @Ignore
-    public NotificationEntity(String packageName, String appLabel,
+    public NotificationEntity(String notificationKey, String packageName, String appLabel,
                               String title, String text, String subText,
                               long postedAt, long capturedAt,
                               boolean isOngoing, int importance) {
+        this.notificationKey = notificationKey;
         this.packageName = packageName;
         this.appLabel    = appLabel;
         this.title       = title;
