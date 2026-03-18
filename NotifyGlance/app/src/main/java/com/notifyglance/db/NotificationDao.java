@@ -39,6 +39,9 @@ public interface NotificationDao {
     @Query("SELECT COUNT(*) FROM notifications WHERE capturedAt >= :threshold")
     int countAllSince(long threshold);
 
+    @Query("DELETE FROM notifications WHERE notificationKey = :notificationKey")
+    int deleteByNotificationKey(String notificationKey);
+
     /** Clear all notifications */
     @Query("DELETE FROM notifications")
     void clearAll();

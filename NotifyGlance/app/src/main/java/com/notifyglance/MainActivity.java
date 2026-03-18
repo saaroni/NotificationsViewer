@@ -18,6 +18,7 @@ import androidx.preference.PreferenceManager;
 
 import com.notifyglance.settings.SettingsActivity;
 import com.notifyglance.util.AlarmScheduler;
+import com.notifyglance.util.NotificationListenerHelper;
 import com.notifyglance.util.Prefs;
 
 public class MainActivity extends AppCompatActivity {
@@ -75,15 +76,14 @@ public class MainActivity extends AppCompatActivity {
         tvMasterStatus.setText(masterOn
                 ? "Overlay is active. New notifications can trigger hands-free display."
                 : "Overlay is off. Turn it on to enable automatic display.");
+
+        if (nlsGranted) {
+            NotificationListenerHelper.requestRebindIfPermitted(this);
+        }
     }
 
     private boolean isNotificationListenerGranted() {
-        String flat = Settings.Secure.getString(getContentResolver(),
-                "enabled_notification_listeners");
-        return flat != null && flat.contains(
-                new ComponentName(this,
-                        com.notifyglance.service.GlanceNotificationListenerService.class)
-                        .flattenToString());
+        return NotificationListenerHelper.isNotificationAccessGranted(this);
     }
 
     private void openNlsSettings() {
