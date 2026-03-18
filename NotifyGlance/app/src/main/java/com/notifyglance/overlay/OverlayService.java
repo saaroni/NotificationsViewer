@@ -483,11 +483,11 @@ public class OverlayService extends Service {
 
     private void showTestCard() {
         long now = System.currentTimeMillis();
-        NotificationEntity newest = new NotificationEntity(
+        NotificationEntity newest = new NotificationEntity("TestCard1",
                 "com.example.chat", "Messages",
                 "Dinner at 8?", "Let's meet near the station. I'll be there in 15.",
                 "", now + 1000, now + 1000, false, 0);
-        NotificationEntity demo = new NotificationEntity(
+        NotificationEntity demo = new NotificationEntity("TestCard2",
                 "com.example.demo", "Demo App",
                 "Test Notification", "This is a test overlay card from NotifyGlance.",
                 "", now, now, false, 0);

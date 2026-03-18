@@ -29,15 +29,6 @@ public class NotificationEntity {
     public NotificationEntity() {}
 
     @Ignore
-    public NotificationEntity(String packageName, String appLabel,
-                              String title, String text, String subText,
-                              long postedAt, long capturedAt,
-                              boolean isOngoing, int importance) {
-        this(null, packageName, appLabel, title, text, subText,
-                postedAt, capturedAt, isOngoing, importance);
-    }
-
-    @Ignore
     public NotificationEntity(String notificationKey, String packageName, String appLabel,
                               String title, String text, String subText,
                               long postedAt, long capturedAt,
