@@ -423,7 +423,7 @@ public class OverlayService extends Service {
 
         float sp = fontSizeSp();
         tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 2);
-        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 5);
+        tvText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, sp - 3);
     }
 
     private void scheduleAutoScroll() {
