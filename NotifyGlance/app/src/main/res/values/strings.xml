@@ -4,6 +4,15 @@
     <string name="settings_title">Settings</string>
     <string name="diagnostics_title">Diagnostics</string>
     <string name="notification_service_label">NotifyGlance Notification Reader</string>
+    <string name="allowed_apps_title">Allowed Apps</string>
+    <string name="allowed_apps_search_hint">Search apps</string>
+    <string name="allowed_apps_summary_default">Select apps to show</string>
+    <string name="allowed_apps_summary_all_enabled">All apps enabled</string>
+    <string name="allowed_apps_summary_count">%1$d of %2$d apps enabled</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="enable_all">Enable All</string>
+    <string name="disable_all">Disable All</string>
 
     <!-- Timed session options -->
     <string-array name="timed_session_labels">
