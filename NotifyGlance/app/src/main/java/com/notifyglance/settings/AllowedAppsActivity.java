@@ -120,7 +120,7 @@ public class AllowedAppsActivity extends AppCompatActivity {
                 return true;
             }
 
-            int mode = appOpsManager.unsafeCheckOpNoThrow(
+            int mode = appOpsManager.checkOpNoThrow(
                     AppOpsManager.OPSTR_POST_NOTIFICATION,
                     info.uid,
                     info.packageName
