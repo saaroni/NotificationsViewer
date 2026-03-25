@@ -2,11 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="64dp"
+    android:minHeight="72dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingHorizontal="8dp"
-    android:paddingVertical="10dp">
+    android:paddingHorizontal="10dp"
+    android:paddingVertical="12dp">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -18,7 +18,7 @@
             android:id="@+id/app_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             android:textStyle="bold" />
 
         <TextView
@@ -26,17 +26,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
     </LinearLayout>
 
-    <com.google.android.material.materialswitch.MaterialSwitch
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/app_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="14dp"
+        android:scaleX="1.2"
+        android:scaleY="1.2"
         android:showText="false"
-        android:textOn=""
-        android:textOff="" />
+        android:switchMinWidth="56dp"
+        android:thumbTint="@android:color/holo_blue_light"
+        android:trackTint="@android:color/darker_gray" />
 
 </LinearLayout>

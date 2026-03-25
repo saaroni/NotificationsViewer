@@ -18,7 +18,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.materialswitch.MaterialSwitch;
+import androidx.appcompat.widget.SwitchCompat;
 import com.notifyglance.R;
 import com.notifyglance.util.Prefs;
 
@@ -195,7 +195,7 @@ public class AllowedAppsActivity extends AppCompatActivity {
         static class ViewHolder extends RecyclerView.ViewHolder {
             final TextView appName;
             final TextView packageName;
-            final MaterialSwitch appToggle;
+            final SwitchCompat appToggle;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
