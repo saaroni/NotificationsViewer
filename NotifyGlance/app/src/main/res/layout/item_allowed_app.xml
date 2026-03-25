@@ -18,7 +18,7 @@
             android:id="@+id/app_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textSize="20sp" />
 
     </LinearLayout>
 
@@ -38,8 +38,6 @@
         android:scaleX="1.2"
         android:scaleY="1.2"
         android:showText="false"
-        android:switchMinWidth="56dp"
-        android:thumbTint="@android:color/holo_blue_light"
-        android:trackTint="@android:color/darker_gray" />
+        android:switchMinWidth="56dp" />
 
 </LinearLayout>
