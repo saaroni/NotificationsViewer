@@ -32,6 +32,8 @@ import java.util.Set;
 
 public class AllowedAppsActivity extends AppCompatActivity {
 
+    private static final String OP_POST_NOTIFICATION = "android:post_notification";
+
     private final List<AppToggleItem> allItems = new ArrayList<>();
     private final List<AppToggleItem> filteredItems = new ArrayList<>();
     private AllowedAppsAdapter adapter;
@@ -121,7 +123,7 @@ public class AllowedAppsActivity extends AppCompatActivity {
             }
 
             int mode = appOpsManager.checkOpNoThrow(
-                    AppOpsManager.OPSTR_POST_NOTIFICATION,
+                    OP_POST_NOTIFICATION,
                     info.uid,
                     info.packageName
             );
