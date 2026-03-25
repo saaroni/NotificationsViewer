@@ -1,5 +1,6 @@
 package com.notifyglance.settings;
 
+import android.app.AppOpsManager;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -86,11 +87,18 @@ public class AllowedAppsActivity extends AppCompatActivity {
 
         List<AppToggleItem> loaded = new ArrayList<>();
         for (ApplicationInfo info : apps) {
-            if ((info.flags & ApplicationInfo.FLAG_SYSTEM) == 0
-                    || pm.getLaunchIntentForPackage(info.packageName) != null) {
-                String name = pm.getApplicationLabel(info).toString();
-                loaded.add(new AppToggleItem(name, info.packageName));
+            boolean eligibleApp = (info.flags & ApplicationInfo.FLAG_SYSTEM) == 0
+                    || pm.getLaunchIntentForPackage(info.packageName) != null;
+            if (!eligibleApp) {
+                continue;
             }
+
+            if (!canPostNotifications(info)) {
+                continue;
+            }
+
+            String name = pm.getApplicationLabel(info).toString();
+            loaded.add(new AppToggleItem(name, info.packageName));
         }
 
         loaded.sort((a, b) -> a.label.compareToIgnoreCase(b.label));
@@ -102,6 +110,26 @@ public class AllowedAppsActivity extends AppCompatActivity {
 
         allItems.clear();
         allItems.addAll(loaded);
+    }
+
+
+    private boolean canPostNotifications(ApplicationInfo info) {
+        try {
+            AppOpsManager appOpsManager = getSystemService(AppOpsManager.class);
+            if (appOpsManager == null) {
+                return true;
+            }
+
+            int mode = appOpsManager.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_POST_NOTIFICATION,
+                    info.uid,
+                    info.packageName
+            );
+
+            return mode == AppOpsManager.MODE_ALLOWED || mode == AppOpsManager.MODE_DEFAULT;
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     private void applySearch(String query) {
