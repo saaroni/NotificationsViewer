@@ -51,6 +51,13 @@
             android:exported="false"
             android:parentActivityName=".settings.SettingsActivity"
             android:label="@string/diagnostics_title" />
+        <!-- Allowed Apps Activity -->
+        <activity
+            android:name=".settings.AllowedAppsActivity"
+            android:exported="false"
+            android:parentActivityName=".settings.SettingsActivity"
+            android:label="@string/allowed_apps_title" />
+
 
         <!-- Overlay Activity (shows on lock screen) -->
         <activity

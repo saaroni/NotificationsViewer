@@ -70,12 +70,10 @@
     <!-- ── Filters ───────────────────────────────────────── -->
     <PreferenceCategory android:title="Notification Filters">
 
-        <MultiSelectListPreference
+        <Preference
             android:key="pref_allowed_apps"
             android:title="Allowed Apps"
-            android:summary="Select apps to show (empty = all apps)"
-            android:entries="@array/empty_array"
-            android:entryValues="@array/empty_array" />
+            android:summary="@string/allowed_apps_summary_default" />
 
         <CheckBoxPreference
             android:key="pref_suppress_ongoing"

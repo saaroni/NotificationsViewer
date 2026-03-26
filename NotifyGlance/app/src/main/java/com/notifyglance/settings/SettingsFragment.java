@@ -1,6 +1,7 @@
 package com.notifyglance.settings;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -8,28 +9,31 @@ import android.text.InputType;
 
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
-import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import com.notifyglance.R;
 import com.notifyglance.util.Prefs;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class SettingsFragment extends PreferenceFragmentCompat
         implements Preference.OnPreferenceChangeListener {
 
     private ListPreference timedSession;
     private EditTextPreference overlayLookback;
+    private Preference allowedAppsPreference;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
-        timedSession    = findPreference(Prefs.KEY_TIMED_SESSION);
+        timedSession = findPreference(Prefs.KEY_TIMED_SESSION);
         overlayLookback = findPreference(Prefs.KEY_OVERLAY_LOOKBACK_MIN);
+        allowedAppsPreference = findPreference(Prefs.KEY_ALLOWED_APPS);
 
         if (timedSession != null) timedSession.setOnPreferenceChangeListener(this);
         if (overlayLookback != null) {
@@ -38,7 +42,12 @@ public class SettingsFragment extends PreferenceFragmentCompat
                     et.setInputType(InputType.TYPE_CLASS_NUMBER));
         }
 
-        populateAppFilter();
+        if (allowedAppsPreference != null) {
+            allowedAppsPreference.setOnPreferenceClickListener(p -> {
+                startActivity(new Intent(requireContext(), AllowedAppsActivity.class));
+                return true;
+            });
+        }
 
         Preference diagPref = findPreference("pref_diagnostics_screen");
         if (diagPref != null) {
@@ -50,12 +59,18 @@ public class SettingsFragment extends PreferenceFragmentCompat
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        updateAllowedAppsSummary();
+    }
+
+    @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         String key = preference.getKey();
 
         if (Prefs.KEY_TIMED_SESSION.equals(key)) {
             String mode = (String) newValue;
-            androidx.preference.PreferenceManager
+            PreferenceManager
                     .getDefaultSharedPreferences(requireContext())
                     .edit().putString(key, mode).apply();
             com.notifyglance.util.AlarmScheduler.schedule(requireContext());
@@ -80,40 +95,42 @@ public class SettingsFragment extends PreferenceFragmentCompat
         return true;
     }
 
+    private void updateAllowedAppsSummary() {
+        if (allowedAppsPreference == null) return;
 
-    private void populateAppFilter() {
-        MultiSelectListPreference appFilter = findPreference(Prefs.KEY_ALLOWED_APPS);
-        if (appFilter == null) return;
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        Set<String> allowed = sp.getStringSet(Prefs.KEY_ALLOWED_APPS, Collections.emptySet());
+        int totalApps = getEligibleInstalledAppCount();
 
+        if (totalApps <= 0) {
+            allowedAppsPreference.setSummary(getString(R.string.allowed_apps_summary_default));
+            return;
+        }
+
+        if (allowed.isEmpty()) {
+            allowedAppsPreference.setSummary(getString(R.string.allowed_apps_summary_all_enabled));
+            return;
+        }
+
+        int enabledCount = Math.min(allowed.size(), totalApps);
+        allowedAppsPreference.setSummary(getString(
+                R.string.allowed_apps_summary_count,
+                enabledCount,
+                totalApps
+        ));
+    }
+
+    private int getEligibleInstalledAppCount() {
         PackageManager pm = requireContext().getPackageManager();
         List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-
-        List<String> labels = new ArrayList<>();
-        List<String> pkgNames = new ArrayList<>();
-
+        int count = 0;
         for (ApplicationInfo info : apps) {
             if ((info.flags & ApplicationInfo.FLAG_SYSTEM) == 0
                     || pm.getLaunchIntentForPackage(info.packageName) != null) {
-                labels.add(pm.getApplicationLabel(info).toString());
-                pkgNames.add(info.packageName);
+                count++;
             }
         }
-
-        List<String[]> pairs = new ArrayList<>();
-        for (int i = 0; i < labels.size(); i++) {
-            pairs.add(new String[]{labels.get(i), pkgNames.get(i)});
-        }
-        pairs.sort((a, b) -> a[0].compareToIgnoreCase(b[0]));
-
-        CharSequence[] entries = new CharSequence[pairs.size()];
-        CharSequence[] values = new CharSequence[pairs.size()];
-        for (int i = 0; i < pairs.size(); i++) {
-            entries[i] = pairs.get(i)[0];
-            values[i] = pairs.get(i)[1];
-        }
-
-        appFilter.setEntries(entries);
-        appFilter.setEntryValues(values);
+        return count;
     }
 
     private void showToast(String msg) {
