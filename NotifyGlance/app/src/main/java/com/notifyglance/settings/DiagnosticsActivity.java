@@ -45,6 +45,12 @@ public class DiagnosticsActivity extends AppCompatActivity {
             android.widget.Toast.makeText(this, "Test card triggered!", android.widget.Toast.LENGTH_SHORT).show();
         });
 
+        Button btnShowOverlay = findViewById(R.id.btn_show_overlay);
+        btnShowOverlay.setOnClickListener(v -> {
+            OverlayService.triggerOverlay(this);
+            android.widget.Toast.makeText(this, "Timed session overlay triggered!", android.widget.Toast.LENGTH_SHORT).show();
+        });
+
         Button btnClearDb = findViewById(R.id.btn_clear_db);
         btnClearDb.setOnClickListener(v -> clearDatabase());
 
@@ -77,9 +83,19 @@ public class DiagnosticsActivity extends AppCompatActivity {
         executor.execute(() -> {
             int total = AppDatabase.getInstance(this).notificationDao().countAll();
             int unpresented = AppDatabase.getInstance(this).notificationDao().countUnpresented();
+            long lookbackThreshold = System.currentTimeMillis()
+                    - (prefs.getOverlayLookbackMinutes() * 60L * 1000L);
+            int eligibleInLookback = AppDatabase.getInstance(this).notificationDao().countAllSince(lookbackThreshold);
+            int maxCards = prefs.getMaxCards();
+            int perSessionCount = Math.min(eligibleInLookback, maxCards);
+            if (!prefs.isMasterOn() || Prefs.TIMED_OFF.equals(prefs.getTimedSession()) || prefs.isQuietNow()) {
+                perSessionCount = 0;
+            }
+            final int shouldShowCount = perSessionCount;
             runOnUiThread(() -> tvNotifCount.setText(
                 "Stored notifications: " + total + "\n" +
-                "Unread (not yet shown): " + unpresented
+                "Unread (not yet shown): " + unpresented + "\n" +
+                "Should show in timed session now: " + shouldShowCount
             ));
         });
     }
